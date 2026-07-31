@@ -218,6 +218,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 </div>
 <div class="card">
 <button class="linkbtn" id="changeKey">Đổi mã quản trị</button>
+<button class="linkbtn" id="changeExec">Đổi link /exec</button>
 </div>
 </div>
 
@@ -243,7 +244,8 @@ function normExec_(u){
   u = String(u || "").trim().replace(/[#?].*$/, "").replace(/\/+$/, "");
   if (!u) return "";
   if (!/^https?:\/\//i.test(u)) return "";
-  if (!/\/exec$/i.test(u)) { if (/script\.google\.com/i.test(u)) u += "/exec"; else return ""; }
+  u = u.replace(/\/dev$/i, "/exec");
+  if (!/\/exec$/i.test(u)) { if (/script\.google\.com\/macros\/s\//i.test(u)) u += "/exec"; else return ""; }
   return u;
 }
 function getExec(){
@@ -273,8 +275,11 @@ function api(action, params){
     if (v !== null && typeof v === 'object') v = JSON.stringify(v);
     qs += '&' + k + '=' + encodeURIComponent(v==null?'':v);
   });
-  if (!API_URL) return Promise.reject(new Error("Chưa có link /exec của bot. Hãy gõ /web trong bot rồi bấm nút mở Bảng điều khiển (bot tự gắn link), hoặc dán link /exec ở ô bên dưới."));
-  return fetch(API_URL + qs).then(function(r){return r.json();}).then(function(j){
+  if (!API_URL) return Promise.reject(new Error("Chưa có link /exec của bot. Hãy gõ /web trong bot rồi bấm nút mở Bảng điều khiển, hoặc dán link /exec ở ô bên dưới."));
+  return fetch(API_URL + qs).then(
+    function(r){ return r.json().catch(function(){ throw new Error("Máy chủ trả về dữ liệu lạ (HTTP " + r.status + "). Nhiều khả năng Deploy đang đặt Who has access khác Anyone."); }); },
+    function(){ throw new Error("Không gọi được máy chủ (Failed to fetch). Link đang dùng: " + API_URL + " — Kiểm tra Deploy > Manage deployments > Who has access = Anyone, và link phải kết thúc bằng /exec."); }
+  ).then(function(j){
     if (j && j.ok) return j.data;
     throw new Error((j && j.error) || 'Lỗi không rõ');
   });
@@ -286,7 +291,7 @@ function showGate(msg){
   $('gate').classList.remove('hidden');
   $('gateKey').value = ADMIN_KEY || '';
   try { $('gateExec').value = API_URL || ''; } catch(e){}
-  $('gateMsg').innerHTML = msg ? ('<span class="pill err">'+esc(msg)+'</span>') : '';
+  $('gateMsg').innerHTML = (msg ? ('<span class="pill err">'+esc(msg)+'</span><br>') : '') + '<span class="muted">Link đang dùng: ' + esc(API_URL || '(chưa có)') + '</span>';
   setStatus('bad','Chưa kết nối');
 }
 function showApp(){
@@ -304,6 +309,7 @@ $('gateBtn').addEventListener('click', function(){
   refresh(true);
 });
 $('changeKey').addEventListener('click', function(){ showGate(''); });
+$('changeExec').addEventListener('click', function(){ showGate('Dán lại link /exec rồi bấm Lưu và kết nối.'); });
 
 /* ===== Tabs ===== */
 document.querySelectorAll('.tab').forEach(function(tab){
