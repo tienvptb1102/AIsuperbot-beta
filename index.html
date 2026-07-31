@@ -65,6 +65,8 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <h2>🔑 Nhập mã quản trị</h2>
 <p class="muted">Dán ADMIN_KEY (lấy trong sheet Config của bot). Máy sẽ nhớ, lần sau không cần nhập lại.</p>
 <input id="gateKey" placeholder="Dán ADMIN_KEY tại đây" autocomplete="off">
+<p class="muted" style="margin-top:10px">Link <b>/exec</b> của bot — tự điền khi mở từ lệnh /web. Chỉ nhập tay nếu mở trực tiếp bằng trình duyệt.</p>
+<input id="gateExec" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
 <button id="gateBtn">✅ Lưu &amp; kết nối</button>
 <div id="gateMsg" class="muted" style="margin-top:8px"></div>
 </div>
@@ -77,6 +79,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <div class="tab" data-p="members">👥 Thành viên</div>
 <div class="tab" data-p="pusers">🙋 User riêng</div>
 <div class="tab" data-p="groups">🗂 Nhóm</div>
+<div class="tab" data-p="ai">🤖 Trợ lý AI</div>
 <div class="tab" data-p="activity">📜 Nhật ký</div>
 <div class="tab" data-p="errors">🩺 Nhật ký lỗi</div>
 <div class="tab" data-p="config">🔐 Cấu hình</div>
@@ -143,6 +146,16 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 </div>
 </div>
 
+<div class="panel" id="p-ai">
+<div class="card">
+<h2>Trợ lý AI (lệnh /ai)</h2>
+<p class="muted">Mặc định <b>chỉ admin</b> dùng được <b>/ai</b> khi nhắn riêng với bot. Bật công tắc bên dưới để cho phép từng nhóm dùng, và đặt giới hạn lượt mỗi ngày cho nhóm đó. Trong nhóm, bot nhớ <b>chung một mạch hội thoại</b> và gọi tên người vừa hỏi khi trả lời.</p>
+<div id="aiInfo" class="muted" style="margin-bottom:8px"></div>
+<button class="sec" id="aiRefresh" onclick="loadAiGroups()">🔄 Làm mới</button>
+<div id="aiWrap" style="margin-top:8px"><p class="muted">Đang tải...</p></div>
+</div>
+</div>
+
 <div class="panel" id="p-activity">
 <div class="card">
 <h2>Nhật ký hoạt động gần đây</h2>
@@ -171,6 +184,14 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 </select>
 <label>API Key (chỉ cần khi dùng google_v2)</label>
 <input id="cfgApiKey" placeholder="Dán API key nếu có">
+<label>OpenRouter API key <span class="muted">(openrouter.ai/keys — 1 key dùng được hàng trăm model, dùng cho cả /ai)</span></label>
+<input id="cfgOrKey" placeholder="sk-or-v1-... (nhiều key thì cách nhau dấu phẩy)">
+<label>Danh sách model OpenRouter <span class="muted">(cách nhau dấu phẩy — bot thử LẦN LƯỢT TỪ TRÊN XUỐNG)</span></label>
+<input id="cfgOrModels" placeholder="vd: deepseek/deepseek-chat-v3.1:free,google/gemma-3-27b-it:free,openrouter/free">
+<label>Model Groq <span class="muted">(cũng cách nhau dấu phẩy, thử từ trên xuống)</span></label>
+<input id="cfgGroqModels" placeholder="vd: llama-3.3-70b-versatile,meta-llama/llama-4-scout-17b-16e-instruct">
+<label>Giới hạn /ai mặc định cho 1 nhóm (lượt/ngày)</label>
+<input id="cfgAiLimit" type="number" placeholder="vd: 20">
 <button class="sec" id="apiCheck">🧪 Kiểm tra API dịch</button>
 <div id="apiCheckBox" class="muted" style="margin-top:8px"></div>
 </div>
@@ -207,20 +228,30 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <script>
 try { if (window.Telegram && Telegram.WebApp) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); document.body.style.paddingBottom='80px'; } } catch(e){}
 
+/* Link /exec KHONG can dan tay: bot tu gan vao URL khi go /web, sau do luu lai o may.
+   Nho vay 1 file index.html dung duoc cho BAT KY bot nao. */
 function param_(name){
-  var h = String(location.hash||"").replace(/^#/, "");
-  var m = new RegExp("(?:^|&)" + name + "=([^&]*)").exec(h);
-  if (!m) m = new RegExp("[?&]" + name + "=([^&]*)").exec(String(location.search||""));
-  try { return m ? decodeURIComponent(m[1]) : ""; } catch(e){ return m ? m[1] : ""; }
+  var out = "";
+  var m = new RegExp("[?&]" + name + "=([^&#]*)").exec(String(location.search || ""));
+  if (!m) m = new RegExp("(?:^|[#&])" + name + "=([^&]*)").exec(String(location.hash || ""));
+  if (!m) { try { var sp = Telegram.WebApp.initDataUnsafe.start_param || ""; if (sp.indexOf(name + "=") === 0) out = sp.slice(name.length + 1); } catch(e){} }
+  if (m) out = m[1];
+  try { out = decodeURIComponent(out); } catch(e){}
+  return out;
+}
+function normExec_(u){
+  u = String(u || "").trim().replace(/[#?].*$/, "").replace(/\/+$/, "");
+  if (!u) return "";
+  if (!/^https?:\/\//i.test(u)) return "";
+  if (!/\/exec$/i.test(u)) { if (/script\.google\.com/i.test(u)) u += "/exec"; else return ""; }
+  return u;
 }
 function getExec(){
-  var e = param_("exec");
-  if (!e) { try { e = localStorage.getItem("tein_exec") || ""; } catch(_){} }
-  if (e) { try { localStorage.setItem("tein_exec", e); } catch(_){} }
-  return e;
+  var e = normExec_(param_("exec"));
+  if (e) { try { localStorage.setItem("tein_exec", e); } catch(_){} return e; }
+  try { return localStorage.getItem("tein_exec") || ""; } catch(_){ return ""; }
 }
-function setExec(u){ u = String(u||"").trim(); if(!u) return; try { localStorage.setItem("tein_exec", u); } catch(_){} API_URL = u; }
-// Link /exec lay tu bot (lenh /web) hoac tu localStorage. Khong can sua tay file nay.
+function setExec(u){ u = normExec_(u); if (!u) return false; try { localStorage.setItem("tein_exec", u); } catch(_){} API_URL = u; return true; }
 var API_URL = getExec();
 var STATE = { groups: [], config: {} };
 
@@ -242,7 +273,7 @@ function api(action, params){
     if (v !== null && typeof v === 'object') v = JSON.stringify(v);
     qs += '&' + k + '=' + encodeURIComponent(v==null?'':v);
   });
-  if (!API_URL) return Promise.reject(new Error("⚠️ Chưa có link /exec. Hãy mở Bảng điều khiển bằng lệnh /web trong bot (bot sẽ tự gắn link)."));
+  if (!API_URL) return Promise.reject(new Error("Chưa có link /exec của bot. Hãy gõ /web trong bot rồi bấm nút mở Bảng điều khiển (bot tự gắn link), hoặc dán link /exec ở ô bên dưới."));
   return fetch(API_URL + qs).then(function(r){return r.json();}).then(function(j){
     if (j && j.ok) return j.data;
     throw new Error((j && j.error) || 'Lỗi không rõ');
@@ -254,6 +285,7 @@ function showGate(msg){
   $('app').classList.add('hidden');
   $('gate').classList.remove('hidden');
   $('gateKey').value = ADMIN_KEY || '';
+  try { $('gateExec').value = API_URL || ''; } catch(e){}
   $('gateMsg').innerHTML = msg ? ('<span class="pill err">'+esc(msg)+'</span>') : '';
   setStatus('bad','Chưa kết nối');
 }
@@ -264,6 +296,9 @@ function showApp(){
 $('gateBtn').addEventListener('click', function(){
   var k = cleanKey($('gateKey').value);
   if(!k){ $('gateMsg').innerHTML='<span class="pill err">Hãy dán mã</span>'; return; }
+  var exv = ($('gateExec') ? $('gateExec').value : '');
+  if (String(exv||'').trim()) { if(!setExec(exv)){ $('gateMsg').innerHTML='<span class="pill err">Link /exec không hợp lệ (phải kết thúc bằng /exec)</span>'; return; } }
+  if (!API_URL) { $('gateMsg').innerHTML='<span class="pill err">Chưa có link /exec</span>'; return; }
   ADMIN_KEY = k; setKey(k);
   setStatus('','Đang kết nối...');
   refresh(true);
@@ -431,6 +466,10 @@ function fillConfig(){
   var c=STATE.config;
   $('cfgProvider').value=c.TRANSLATE_PROVIDER||'google_free';
   $('cfgApiKey').value=c.TRANSLATE_API_KEY||'';
+  if($('cfgOrKey')) $('cfgOrKey').value=c.OPENROUTER_API_KEY||'';
+  if($('cfgOrModels')) $('cfgOrModels').value=c.OPENROUTER_MODELS||'';
+  if($('cfgGroqModels')) $('cfgGroqModels').value=c.GROQ_MODEL||'';
+  if($('cfgAiLimit')) $('cfgAiLimit').value=c.AI_DAILY_LIMIT||'';
   $('cfgSecret').value=c.SECRET_CMD||'';
   $('cfgCdAll').value=c.COOLDOWN_ALL||'';
   $('cfgCdDich').value=c.COOLDOWN_DICH||'';
@@ -440,6 +479,10 @@ function fillConfig(){
 }
 $('cfgSave').addEventListener('click',function(){
   var obj={TRANSLATE_PROVIDER:$('cfgProvider').value,TRANSLATE_API_KEY:$('cfgApiKey').value.trim(),SECRET_CMD:$('cfgSecret').value.trim(),COOLDOWN_ALL:$('cfgCdAll').value,COOLDOWN_DICH:$('cfgCdDich').value,ADMIN_ID:$('cfgAdminId').value.trim(),PRIVATE_DAILY_LIMIT:$('cfgDaily').value,COPY_MODE:$('cfgCopyMode').value};
+  if($('cfgOrKey') && $('cfgOrKey').value.trim()) obj.OPENROUTER_API_KEY=$('cfgOrKey').value.trim();
+  if($('cfgOrModels')) obj.OPENROUTER_MODELS=$('cfgOrModels').value.trim();
+  if($('cfgGroqModels')) obj.GROQ_MODEL=$('cfgGroqModels').value.trim();
+  if($('cfgAiLimit') && $('cfgAiLimit').value) obj.AI_DAILY_LIMIT=$('cfgAiLimit').value;
   var tok=$('cfgToken').value.trim();
   if(tok)obj.BOT_TOKEN=tok;
   api('setConfig',{payload:obj}).then(function(){toast('Đã lưu cấu hình');$('cfgToken').value='';return refresh();});
@@ -484,6 +527,42 @@ function loadPrivateUsers(){
     w.innerHTML=h;
   }).catch(function(e){ w.innerHTML='<p class="muted">Lỗi: '+esc(e.message)+'</p>'; });
 }
+function loadAiGroups(){
+  var w=document.getElementById('aiWrap');
+  if(!w) return;
+  w.innerHTML='<p class="muted">Đang tải...</p>';
+  api('aiGroups').then(function(d){
+    var info=document.getElementById('aiInfo');
+    if(info){
+      info.innerHTML=(d.hasKey?'<span class="pill">✅ Đã có OPENROUTER_API_KEY</span>':'<span class="pill err">❌ Chưa có OPENROUTER_API_KEY</span>')+
+        ' — Giới hạn mặc định: <b>'+esc(d.defaultLimit)+'</b> lượt/ngày<br>Thứ tự model sẽ thử: '+esc(d.models||'(chưa đặt)');
+    }
+    var list=d.groups||[];
+    if(!list.length){ w.innerHTML='<p class="muted">Chưa có nhóm nào.</p>'; return; }
+    var h='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'+
+      '<tr style="text-align:left;border-bottom:1px solid #ccc"><th>Nhóm</th><th>Group ID</th><th>Cho dùng /ai</th><th>Đã dùng hôm nay</th><th>Giới hạn/ngày</th></tr>';
+    list.forEach(function(g){
+      var btn='<button class="sec" style="margin:2px;padding:5px 10px" onclick="aiToggle(\''+g.id+'\','+(g.on?0:1)+')">'+(g.on?'✅ Đang bật':'⛔ Đang tắt')+'</button>';
+      var lim='<input type="number" id="ail_'+g.id+'" value="'+g.limit+'" style="width:70px;padding:5px"> <button class="sec" style="margin:2px;padding:5px 8px" onclick="aiSetLimit(\''+g.id+'\')">💾</button>';
+      h+='<tr style="border-bottom:1px solid #eee"><td>'+esc(g.name||'(chưa đặt tên)')+'</td><td>'+esc(g.id)+'</td><td style="white-space:nowrap">'+btn+'</td><td><b>'+g.used+'</b>/'+g.limit+'</td><td style="white-space:nowrap">'+lim+'</td></tr>';
+    });
+    h+='</table></div>';
+    w.innerHTML=h;
+  }).catch(function(e){ w.innerHTML='<p class="muted">Lỗi: '+esc(e.message)+'</p>'; });
+}
+window.aiToggle=function(gid,on){
+  api('setAiGroup',{gid:gid,on:on}).then(function(){ toast(on?'🟢 Đã bật AI cho nhóm':'🔴 Đã tắt AI cho nhóm'); loadAiGroups(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+};
+window.aiSetLimit=function(gid){
+  var el=document.getElementById('ail_'+gid);
+  var v=el?parseInt(el.value,10):0;
+  if(!v||v<1){ toast('Nhập giới hạn lượt/ngày (số từ 1 trở lên)'); return; }
+  api('setAiGroup',{gid:gid,limit:v}).then(function(){ toast('✅ Đã đặt '+v+' lượt/ngày'); loadAiGroups(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+};
+(function(){
+  var t=document.querySelector('.tab[data-p="ai"]');
+  if(t) t.addEventListener('click', function(){ setTimeout(loadAiGroups, 60); });
+})();
 window.puSet=function(uid,status){
   api('setPrivate',{uid:uid,status:status}).then(function(){ toast('✅ Đã cập nhật'); loadPrivateUsers(); }).catch(function(e){ toast('Lỗi: '+e.message); });
 };
