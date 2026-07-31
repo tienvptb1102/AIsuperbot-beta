@@ -207,7 +207,21 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <script>
 try { if (window.Telegram && Telegram.WebApp) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); document.body.style.paddingBottom='80px'; } } catch(e){}
 
-var API_URL = "https://script.google.com/macros/s/AKfycbzWdKQzZC42p9v-7vy08I3mdS7Owr1-lR-1e14IjAI8lzDPG6BxdPdwmFEQcbiBHikK/exec"; // <-- dan URL ket thuc bang /exec vao trong dau ngoac kep nay
+function param_(name){
+  var h = String(location.hash||"").replace(/^#/, "");
+  var m = new RegExp("(?:^|&)" + name + "=([^&]*)").exec(h);
+  if (!m) m = new RegExp("[?&]" + name + "=([^&]*)").exec(String(location.search||""));
+  try { return m ? decodeURIComponent(m[1]) : ""; } catch(e){ return m ? m[1] : ""; }
+}
+function getExec(){
+  var e = param_("exec");
+  if (!e) { try { e = localStorage.getItem("tein_exec") || ""; } catch(_){} }
+  if (e) { try { localStorage.setItem("tein_exec", e); } catch(_){} }
+  return e;
+}
+function setExec(u){ u = String(u||"").trim(); if(!u) return; try { localStorage.setItem("tein_exec", u); } catch(_){} API_URL = u; }
+// Link /exec lay tu bot (lenh /web) hoac tu localStorage. Khong can sua tay file nay.
+var API_URL = getExec();
 var STATE = { groups: [], config: {} };
 
 function cleanKey(k){ return String(k||'').replace(/^#/, '').split('?')[0].split('&')[0].replace(/tgWebApp[\s\S]*$/i,'').trim(); }
@@ -228,6 +242,7 @@ function api(action, params){
     if (v !== null && typeof v === 'object') v = JSON.stringify(v);
     qs += '&' + k + '=' + encodeURIComponent(v==null?'':v);
   });
+  if (!API_URL) return Promise.reject(new Error("⚠️ Chưa có link /exec. Hãy mở Bảng điều khiển bằng lệnh /web trong bot (bot sẽ tự gắn link)."));
   return fetch(API_URL + qs).then(function(r){return r.json();}).then(function(j){
     if (j && j.ok) return j.data;
     throw new Error((j && j.error) || 'Lỗi không rõ');
