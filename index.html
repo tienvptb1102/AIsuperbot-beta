@@ -254,6 +254,20 @@ function getExec(){
   try { return localStorage.getItem("tein_exec") || ""; } catch(_){ return ""; }
 }
 function setExec(u){ u = normExec_(u); if (!u) return false; try { localStorage.setItem("tein_exec", u); } catch(_){} API_URL = u; return true; }
+// Goi API bang JSONP: chen the <script> nen khong bi CORS chan nhu fetch
+function jsonp_(url){
+  return new Promise(function(resolve, reject){
+    var cb = "tein_cb_" + Date.now() + "_" + Math.floor(Math.random()*100000);
+    var s = document.createElement("script");
+    var done = false;
+    function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(timer); }
+    var timer = setTimeout(function(){ if(done) return; done = true; cleanup(); reject(new Error("Máy chủ không trả lời (quá 30 giây). Kiểm tra link /exec và quyền Deploy = Anyone.")); }, 30000);
+    window[cb] = function(j){ if(done) return; done = true; cleanup(); if (j && j.ok) resolve(j.data); else reject(new Error((j && j.error) || "Lỗi không rõ")); };
+    s.onerror = function(){ if(done) return; done = true; cleanup(); reject(new Error("Không gọi được máy chủ. Link đang dùng: " + API_URL + " — kiểm tra Deploy > Manage deployments > Who has access = Anyone.")); };
+    s.src = url + "&callback=" + cb;
+    (document.body || document.documentElement).appendChild(s);
+  });
+}
 var API_URL = getExec();
 var STATE = { groups: [], config: {} };
 
@@ -276,13 +290,7 @@ function api(action, params){
     qs += '&' + k + '=' + encodeURIComponent(v==null?'':v);
   });
   if (!API_URL) return Promise.reject(new Error("Chưa có link /exec của bot. Hãy gõ /web trong bot rồi bấm nút mở Bảng điều khiển, hoặc dán link /exec ở ô bên dưới."));
-  return fetch(API_URL + qs).then(
-    function(r){ return r.json().catch(function(){ throw new Error("Máy chủ trả về dữ liệu lạ (HTTP " + r.status + "). Nhiều khả năng Deploy đang đặt Who has access khác Anyone."); }); },
-    function(){ throw new Error("Không gọi được máy chủ (Failed to fetch). Link đang dùng: " + API_URL + " — Kiểm tra Deploy > Manage deployments > Who has access = Anyone, và link phải kết thúc bằng /exec."); }
-  ).then(function(j){
-    if (j && j.ok) return j.data;
-    throw new Error((j && j.error) || 'Lỗi không rõ');
-  });
+  return jsonp_(API_URL + qs);
 }
 
 /* ===== Cổng nhập mã ===== */
