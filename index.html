@@ -7,11 +7,16 @@
 <title>TEIN AI BOT — Bảng điều khiển</title>
 <!--
   ============================================================
-   TEIN AI BOT — MINI APP v2.0  (16/08/2026)
+   TEIN AI BOT — MINI APP v2.1.0  (16/08/2026)
    Dán thay TOÀN BỘ file index.html cũ trên GitHub.
-   Sửa: #01 không bao giờ ghi rỗng đè cấu hình · #02 đủ 7 nguồn
-         #07 esc() đầy đủ · #17 chặn nội dung quá dài trước khi gửi
-   Thêm: tab Kiểm tra API · tab Chế độ chạy (Webhook/Polling)
+   v2.0  : #01 không ghi rỗng đè cấu hình · #02 đủ 7 nguồn
+           #07 esc() đầy đủ · #17 chặn nội dung quá dài trước khi gửi
+   v2.1.0: KHỚP LẠI TÊN CỘT với Code.gs — trước đây các bảng Thành viên,
+           User riêng, Nhật ký, Nhật ký lỗi, Trợ lý AI hiện TRỐNG vì đọc
+           sai tên trường trả về.
+           Bỏ tab Chế độ chạy (đã bỏ hẳn webhook từ Code.gs v2.0.8).
+           Bảng dài tự cuộn ngang trong khung, không tràn ra ngoài
+           (thử trên iPhone và PC).
   ============================================================
 -->
 <style>
@@ -25,7 +30,9 @@ header .status{font-size:12px;margin-top:8px;display:flex;align-items:center;gap
 .dot{width:9px;height:9px;border-radius:50%;background:#64748b;display:inline-block;flex:0 0 auto;}
 .dot.live{background:var(--ok);box-shadow:0 0 0 3px rgba(34,197,94,.2);}
 .dot.bad{background:var(--err);box-shadow:0 0 0 3px rgba(239,68,68,.2);}
-.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:84px;z-index:9;}
+.tabs{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--line);z-index:9;}
+.tabs::-webkit-scrollbar{height:4px;}
+.tabs::-webkit-scrollbar-thumb{background:#475569;border-radius:4px;}
 .tab{padding:8px 12px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--muted);white-space:nowrap;}
 .tab.active{background:var(--accent);color:#fff;}
 main{padding:16px;max-width:900px;margin:0 auto;}
@@ -44,8 +51,25 @@ button:disabled{opacity:.5;}
 table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;}
 th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top;}
 th{color:var(--muted);}
-.errDetail{word-break:break-all;overflow-wrap:anywhere;max-width:360px;font-size:12px;}
-#errWrap,#apiWrap{overflow-x:auto;}
+.errDetail{word-break:break-word;overflow-wrap:anywhere;max-width:340px;font-size:12px;}
+/* v2.1.0 — mọi bảng nằm trong khung, dài thì CUỘN NGANG chứ không tràn ra ngoài */
+.tblWrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tblWrap table{min-width:560px;}
+.tblWrap::-webkit-scrollbar{height:6px;}
+.tblWrap::-webkit-scrollbar-thumb{background:#475569;border-radius:6px;}
+th,td{word-break:break-word;overflow-wrap:anywhere;}
+input,textarea,select,button{max-width:100%;}
+code{word-break:break-all;}
+@media (max-width:560px){
+  header{padding:12px 14px;}
+  header h1{font-size:18px;}
+  main{padding:12px;}
+  .card{padding:12px;}
+  table{font-size:12px;}
+  th,td{padding:6px;}
+  .errDetail{max-width:200px;}
+  .tblWrap table{min-width:480px;}
+}
 .row{display:flex;gap:10px;flex-wrap:wrap;}
 .row>div{flex:1;min-width:150px;}
 .chk{display:flex;align-items:center;gap:8px;padding:6px 0;}
@@ -69,7 +93,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <body>
 <header>
 <h1>🤖 TEIN AI BOT</h1>
-<div class="sub">Bảng điều khiển — <b>Mini App v2.0</b> <span id="verBox" class="muted"></span></div>
+<div class="sub">Bảng điều khiển — <b>Mini App v2.1.0</b> <span id="verBox" class="muted"></span></div>
 <div class="status" id="statusLine"><span class="dot" id="statusDot"></span> <span id="statusText">Đang kết nối...</span></div>
 </header>
 
@@ -95,7 +119,6 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <div class="tab" data-p="groups">🗂 Nhóm</div>
 <div class="tab" data-p="ai">🤖 Trợ lý AI</div>
 <div class="tab" data-p="api">🔧 Kiểm tra API</div>
-<div class="tab" data-p="mode">⚙️ Chế độ chạy</div>
 <div class="tab" data-p="activity">📜 Nhật ký</div>
 <div class="tab" data-p="errors">🩺 Nhật ký lỗi</div>
 <div class="tab" data-p="config">🔐 Cấu hình</div>
@@ -179,20 +202,6 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <p class="muted">Bảng này <b>chỉ đọc</b> — không ghi đè gì vào Sheet. Gọi thật từng nhà cung cấp để biết key còn sống và tên model còn tồn tại hay không. Mất khoảng 10-20 giây.</p>
 <button id="apiRun">▶️ Kiểm tra ngay</button>
 <div id="apiWrap" style="margin-top:10px"><p class="muted">Chưa chạy lần nào.</p></div>
-</div>
-</div>
-
-<div class="panel" id="p-mode">
-<div class="card">
-<h2>⚙️ Chế độ chạy của bot</h2>
-<div id="modeNow" class="big" style="margin:6px 0 10px">Đang kiểm tra...</div>
-<div class="modebox">
-<button id="modeHook">⚡ Chuyển sang WEBHOOK (trả lời tức thì)</button>
-<button class="sec" id="modePoll">🕐 Về POLLING (hẹn giờ 1 phút)</button>
-</div>
-<button class="sec" id="modeRefresh">🔄 Xem lại trạng thái</button>
-<div id="modeMsg" class="muted" style="margin-top:10px"></div>
-<p class="muted" style="margin-top:12px"><b>Webhook</b>: Telegram đẩy tin thẳng vào bot → trả lời ngay, không ăn quota hẹn giờ. Nhược: mỗi lần Triển khai phiên bản mới mà link /exec đổi thì phải bật lại.<br><b>Polling</b>: bot tự hỏi Telegram mỗi phút → ổn định, không phụ thuộc link, nhưng tin đầu tiên có thể chậm tối 1 phút và ăn quota 90 phút/ngày.<br>Đổi ở đây hoặc gõ <code>/mode</code> trong Telegram — ô <code>RUN_MODE</code> trong sheet Config luôn được cập nhật theo.</p>
 </div>
 </div>
 
@@ -339,7 +348,6 @@ document.querySelectorAll('.tab').forEach(function(tab){
     var p=tab.getAttribute('data-p');
     $('p-'+p).classList.add('active');
     if(p==='ai') setTimeout(loadAiGroups,60);
-    if(p==='mode') setTimeout(loadMode,60);
   });
 });
 
@@ -355,11 +363,11 @@ function renderGroups(){
   if(cur) sel.value=cur;
   var gw=$('grpWrap');
   if(!STATE.groups.length){ gw.innerHTML='<p class="muted">Chưa có nhóm nào.</p>'; return; }
-  var h='<table><tr><th>Tên</th><th>Group ID</th><th></th></tr>';
+  var h='<div class="tblWrap"><table><tr><th>Tên</th><th>Group ID</th><th>Thành viên</th><th></th></tr>';
   STATE.groups.forEach(function(g){
-    h+='<tr><td><input value="'+esc(g.name)+'" class="gname" data-id="'+esc(g.id)+'" style="padding:6px"></td><td><code>'+esc(g.id)+'</code></td><td><button class="sec btnRename" data-id="'+esc(g.id)+'">Lưu tên</button> <button class="danger btnDelGroup" data-id="'+esc(g.id)+'">Xoá</button></td></tr>';
+    h+='<tr><td><input value="'+esc(g.name)+'" class="gname" data-id="'+esc(g.id)+'" style="padding:6px;min-width:130px"></td><td><code>'+esc(g.id)+'</code></td><td>'+esc(g.members==null?'—':g.members)+'</td><td style="white-space:nowrap"><button class="sec btnRename" data-id="'+esc(g.id)+'">Lưu tên</button> <button class="danger btnDelGroup" data-id="'+esc(g.id)+'">Xoá</button></td></tr>';
   });
-  gw.innerHTML=h+'</table>';
+  gw.innerHTML=h+'</table></div>';
 }
 $('grpWrap').addEventListener('click',function(ev){
   var b=ev.target;
@@ -384,16 +392,17 @@ function renderMembers(){
   var gid=$('memGroup').value;
   var q=($('memSearch').value||'').toLowerCase().trim();
   if(!MEMBERS.length){ $('memWrap').innerHTML='<p class="muted">Nhóm này chưa có thành viên.</p>'; return; }
+  /* v2.1.0 — Code.gs trả về các trường: gid / uid / un / nm / joined */
   var list=MEMBERS.filter(function(m){
     if(!q) return true;
-    return (String(m.hoTen||'').toLowerCase().indexOf(q)>=0)||(String(m.username||'').toLowerCase().indexOf(q)>=0)||(String(m.userId||'').toLowerCase().indexOf(q)>=0);
+    return (String(m.nm||'').toLowerCase().indexOf(q)>=0)||(String(m.un||'').toLowerCase().indexOf(q)>=0)||(String(m.uid||'').toLowerCase().indexOf(q)>=0);
   });
   if(!list.length){ $('memWrap').innerHTML='<p class="muted">Không tìm thấy thành viên khớp.</p>'; return; }
-  var h='<p class="muted">'+list.length+'/'+MEMBERS.length+' thành viên</p><table><tr><th>Tên</th><th>Username</th><th>User ID</th><th>Ngày vào</th><th></th></tr>';
+  var h='<p class="muted">'+list.length+'/'+MEMBERS.length+' thành viên</p><div class="tblWrap"><table><tr><th>Tên</th><th>Username</th><th>User ID</th><th>Ngày vào</th><th></th></tr>';
   list.forEach(function(m){
-    h+='<tr><td>'+esc(m.hoTen)+'</td><td>'+(m.username?('@'+esc(m.username)):'<span class="muted">(không có)</span>')+'</td><td><code>'+esc(m.userId)+'</code></td><td class="muted">'+esc(m.ngay||'')+'</td><td><button class="danger btnDelMem" data-gid="'+esc(gid)+'" data-uid="'+esc(m.userId)+'">Xoá</button></td></tr>';
+    h+='<tr><td>'+esc(m.nm||'(chưa có tên)')+'</td><td>'+(m.un?('@'+esc(m.un)):'<span class="muted">(không có)</span>')+'</td><td><code>'+esc(m.uid)+'</code></td><td class="muted" style="white-space:nowrap">'+esc(m.joined||'')+'</td><td style="white-space:nowrap"><button class="danger btnDelMem" data-gid="'+esc(gid)+'" data-uid="'+esc(m.uid)+'">Xoá</button></td></tr>';
   });
-  $('memWrap').innerHTML=h+'</table>';
+  $('memWrap').innerHTML=h+'</table></div>';
 }
 function loadMembers(){
   var gid=$('memGroup').value;
@@ -419,7 +428,7 @@ $('addMemBtn').addEventListener('click',function(){
   var uid=$('addUid').value.trim(), un=$('addUname').value.trim().replace(/^@/,''), nm=$('addName').value.trim();
   if(!uid&&!un){ toast('Cần ít nhất User ID hoặc Username'); return; }
   api('addMember',{gid:gid,uid:uid,un:un,nm:nm}).then(function(r){
-    if(r===false) toast('Người này đã có trong nhóm');
+    if(r&&r.added===false) toast('Người này đã có trong nhóm');
     else { toast('Đã thêm'); $('addUid').value=''; $('addUname').value=''; $('addName').value=''; loadMembers(); }
   }).catch(function(e){ toast('Lỗi: '+e.message); });
 });
@@ -427,7 +436,7 @@ $('memExport').addEventListener('click',function(){
   if(!MEMBERS.length){ toast('Chưa có dữ liệu để xuất'); return; }
   var gsel=$('memGroup'); var gname=(gsel.options[gsel.selectedIndex]?gsel.options[gsel.selectedIndex].text:'nhom');
   var rows=[['HoTen','Username','UserID','NgayThamGia']];
-  MEMBERS.forEach(function(m){ rows.push([m.hoTen||'',m.username||'',m.userId||'',m.ngay||'']); });
+  MEMBERS.forEach(function(m){ rows.push([m.nm||'',m.un||'',m.uid||'',m.joined||'']); });
   var csv='\ufeff'+rows.map(function(r){ return r.map(function(c){ return '"'+String(c==null?'':c).replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
   try{
     var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -456,7 +465,7 @@ $('bcSend').addEventListener('click',function(){
   if(!confirm('Gửi tới '+targets.length+' nhóm?')) return;
   var btn=this; btn.disabled=true; btn.textContent='Đang gửi...';
   api('broadcast',{targets:targets,content:content}).then(function(r){
-    toast('Đã gửi tới '+r.ok+'/'+r.total+' nhóm');
+    toast('Đã gửi tới '+((r&&r.sent)||0)+' nhóm'+((r&&r.failed)?(' · lỗi '+r.failed+' nhóm'):''));
     $('bcContent').value=''; bcLen(); $('bcAll').checked=false;
     document.querySelectorAll('.bcg:checked').forEach(function(c){ c.checked=false; });
   }).catch(function(e){ toast('Lỗi: '+e.message); })
@@ -473,12 +482,13 @@ function loadErrors(){
   $('errWrap').innerHTML='<p class="muted">Đang tải...</p>';
   api('getErrors').then(function(rows){
     if(!rows||!rows.length){ $('errWrap').innerHTML='<p class="muted">Không có lỗi nào. 🎉</p>'; return; }
-    var h='<table><tr><th>Thời gian</th><th>Mã</th><th>Hàm</th><th>Chi tiết</th><th></th></tr>';
+    /* v2.1.0 — Code.gs trả về: time / code / fn / detail */
+    var h='<div class="tblWrap"><table><tr><th>Thời gian</th><th>Mã</th><th>Hàm</th><th>Chi tiết</th><th></th></tr>';
     rows.forEach(function(r){
-      var full=r[0]+' | '+r[1]+' | '+r[2]+' | '+r[3];
-      h+='<tr><td class="muted">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td class="errDetail">'+esc(r[3])+'</td><td><button class="sec btnCopyErr" data-copy="'+esc(full)+'" style="margin-top:0;padding:6px 8px;white-space:nowrap">📋 Copy</button></td></tr>';
+      var full=(r.time||'')+' | '+(r.code||'')+' | '+(r.fn||'')+' | '+(r.detail||'');
+      h+='<tr><td class="muted" style="white-space:nowrap">'+esc(r.time)+'</td><td>'+esc(r.code)+'</td><td>'+esc(r.fn)+'</td><td class="errDetail">'+esc(r.detail)+'</td><td><button class="sec btnCopyErr" data-copy="'+esc(full)+'" style="margin-top:0;padding:6px 8px;white-space:nowrap">📋 Copy</button></td></tr>';
     });
-    $('errWrap').innerHTML=h+'</table>';
+    $('errWrap').innerHTML=h+'</table></div>';
     Array.prototype.forEach.call(document.querySelectorAll('.btnCopyErr'),function(b){ b.addEventListener('click',function(){ copyText(b.getAttribute('data-copy')); }); });
   }).catch(function(e){ $('errWrap').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
@@ -487,9 +497,10 @@ function loadActivity(){
   $('actWrap').innerHTML='<p class="muted">Đang tải...</p>';
   api('getLog').then(function(rows){
     if(!rows||!rows.length){ $('actWrap').innerHTML='<p class="muted">Chưa có hoạt động nào.</p>'; return; }
-    var h='<table><tr><th>Thời gian</th><th>Hành động</th><th>Chi tiết</th><th>Nội dung</th></tr>';
-    rows.forEach(function(r){ h+='<tr><td class="muted">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3]||'')+'</td></tr>'; });
-    $('actWrap').innerHTML=h+'</table>';
+    /* v2.1.0 — Code.gs trả về: time / action / detail / content */
+    var h='<div class="tblWrap"><table><tr><th>Thời gian</th><th>Hành động</th><th>Chi tiết</th><th>Nội dung</th></tr>';
+    rows.forEach(function(r){ h+='<tr><td class="muted" style="white-space:nowrap">'+esc(r.time)+'</td><td>'+esc(r.action)+'</td><td class="errDetail">'+esc(r.detail)+'</td><td class="errDetail">'+esc(r.content||'')+'</td></tr>'; });
+    $('actWrap').innerHTML=h+'</table></div>';
   }).catch(function(e){ $('actWrap').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
 $('actRefresh').addEventListener('click',loadActivity);
@@ -500,25 +511,27 @@ function loadPrivateUsers(){
   var w=$('puWrap'); if(!w) return;
   w.innerHTML='<p class="muted">Đang tải...</p>';
   api('privateUsers').then(function(list){
-    var pend=(list||[]).filter(function(u){ return u.tinhTrang==='pending'; }).length;
+    /* v2.1.0 — Code.gs trả về: uid / un / nm / joined / status / used / bonus / limit */
+    var pend=(list||[]).filter(function(u){ return u.status==='pending'; }).length;
     var tab=document.querySelector('.tab[data-p="pusers"]');
     if(tab) tab.textContent='🙋 User riêng'+(pend?(' ('+pend+')'):'');
     if(!list||!list.length){ w.innerHTML='<p class="muted">Chưa có người dùng riêng nào.</p>'; return; }
-    var h='<table><tr><th>Tên</th><th>Username</th><th>ID</th><th>Trạng thái</th><th>Lượt hôm nay</th><th>Cấp thêm</th><th></th></tr>';
+    var h='<div class="tblWrap"><table><tr><th>Tên</th><th>Username</th><th>ID</th><th>Trạng thái</th><th>Lượt hôm nay</th><th>Cấp thêm</th><th></th></tr>';
     list.forEach(function(u){
+      var st=String(u.status||'pending');
       var b='';
-      if(u.tinhTrang!=='approved') b+='<button class="sec puBtn" data-uid="'+esc(u.userId)+'" data-st="approved" style="margin:2px;padding:5px 8px">✅</button>';
-      if(u.tinhTrang!=='rejected') b+='<button class="sec puBtn" data-uid="'+esc(u.userId)+'" data-st="rejected" style="margin:2px;padding:5px 8px">❌</button>';
-      if(u.tinhTrang!=='blocked') b+='<button class="sec puBtn" data-uid="'+esc(u.userId)+'" data-st="blocked" style="margin:2px;padding:5px 8px">⛔</button>';
-      if(u.tinhTrang!=='pending') b+='<button class="sec puBtn" data-uid="'+esc(u.userId)+'" data-st="pending" style="margin:2px;padding:5px 8px">🔄</button>';
-      var used=(u.usedToday!=null?u.usedToday:(u.soLanDich||0));
-      var lim=(u.effLimit!=null?u.effLimit:'?');
-      var give=(u.tinhTrang==='approved')
-        ? ('<input type="number" class="puQd" data-uid="'+esc(u.userId)+'" placeholder="vd: 5" style="width:80px;padding:5px"> <button class="sec puGive" data-uid="'+esc(u.userId)+'" style="margin:2px;padding:5px 8px">＋ Cấp</button>')
+      if(st!=='approved') b+='<button class="sec puBtn" data-uid="'+esc(u.uid)+'" data-st="approved" title="Duyệt" style="margin:2px;padding:5px 8px">✅</button>';
+      if(st!=='rejected') b+='<button class="sec puBtn" data-uid="'+esc(u.uid)+'" data-st="rejected" title="Từ chối" style="margin:2px;padding:5px 8px">❌</button>';
+      if(st!=='blocked') b+='<button class="sec puBtn" data-uid="'+esc(u.uid)+'" data-st="blocked" title="Chặn" style="margin:2px;padding:5px 8px">⛔</button>';
+      if(st!=='pending') b+='<button class="sec puBtn" data-uid="'+esc(u.uid)+'" data-st="pending" title="Đặt lại chờ duyệt" style="margin:2px;padding:5px 8px">🔄</button>';
+      var used=(u.used!=null?u.used:0);
+      var lim=(u.limit!=null?u.limit:'?');
+      var give=(st==='approved')
+        ? ('<input type="number" class="puQd" data-uid="'+esc(u.uid)+'" placeholder="vd: 5" style="width:76px;padding:5px"> <button class="sec puGive" data-uid="'+esc(u.uid)+'" style="margin:2px;padding:5px 8px">＋ Cấp</button>')
         : '<span class="muted">—</span>';
-      h+='<tr><td>'+esc(u.hoTen)+'</td><td>'+(u.username?'@'+esc(u.username):'-')+'</td><td><code>'+esc(u.userId)+'</code></td><td>'+puStatusLabel(u.tinhTrang)+'</td><td style="white-space:nowrap"><b>'+esc(used)+'/'+esc(lim)+'</b></td><td style="white-space:nowrap">'+give+'</td><td style="white-space:nowrap">'+b+'</td></tr>';
+      h+='<tr><td>'+esc(u.nm||'(chưa có tên)')+'</td><td>'+(u.un?'@'+esc(u.un):'<span class="muted">-</span>')+'</td><td><code>'+esc(u.uid)+'</code></td><td style="white-space:nowrap">'+puStatusLabel(st)+'</td><td style="white-space:nowrap"><b>'+esc(used)+'/'+esc(lim)+'</b>'+(u.bonus?(' <span class="muted">(+'+esc(u.bonus)+')</span>'):'')+'</td><td style="white-space:nowrap">'+give+'</td><td style="white-space:nowrap">'+b+'</td></tr>';
     });
-    w.innerHTML=h+'</table>';
+    w.innerHTML=h+'</table></div>';
   }).catch(function(e){ w.innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
 $('puRefresh').addEventListener('click',loadPrivateUsers);
@@ -532,7 +545,7 @@ $('puWrap').addEventListener('click',function(ev){
     var el=document.querySelector('.puQd[data-uid="'+uid+'"]');
     var d=el?parseInt(el.value,10):0;
     if(!d){ toast('Nhập số lượt cần cộng (số âm để trừ)'); return; }
-    api('adjustQuota',{uid:uid,delta:d}).then(function(r){ toast('Đã cập nhật — còn '+r.remaining+'/'+r.effLimit); loadPrivateUsers(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+    api('adjustQuota',{uid:uid,delta:d}).then(function(r){ toast('Đã cập nhật — lượt cấp thêm hôm nay: +'+((r&&r.bonus)||0)); loadPrivateUsers(); }).catch(function(e){ toast('Lỗi: '+e.message); });
   }
 });
 
@@ -541,18 +554,22 @@ function loadAiGroups(){
   var w=$('aiWrap'); if(!w) return;
   w.innerHTML='<p class="muted">Đang tải...</p>';
   api('aiGroups').then(function(d){
+    /* v2.1.0 — Code.gs trả thẳng MỘT MẢNG nhóm: [{id,name,on,limit}] */
+    var list=(d&&d.groups)?d.groups:(d||[]);
     var info=$('aiInfo');
-    if(info) info.innerHTML=(d.hasKey?'<span class="pill ok">Đã có key AI</span>':'<span class="pill err">Chưa có key AI</span>')+' — Mặc định: <b>'+esc(d.defaultLimit)+'</b> lượt/ngày<br>Model sẽ thử: '+esc(d.models||'(chưa đặt)');
-    var list=d.groups||[];
+    if(info){
+      var c=STATE.config||{};
+      var hasKey=!!(c.GEMINI_API_KEY||c.OPENROUTER_API_KEY||c.GROQ_API_KEY);
+      info.innerHTML=(hasKey?'<span class="pill ok">Đã có key AI</span>':'<span class="pill err">Chưa có key AI</span>')+' — Mặc định: <b>'+esc(c.AI_DAILY_LIMIT||'20')+'</b> lượt/ngày<br>Thang nguồn AI: '+esc(c.TEXT_LADDER||'(chưa đặt)');
+    }
     if(!list.length){ w.innerHTML='<p class="muted">Chưa có nhóm nào.</p>'; return; }
-    var h='<table><tr><th>Nhóm</th><th>Group ID</th><th>Cho dùng /ai</th><th>Đã dùng</th><th>Giới hạn/ngày</th></tr>';
+    var h='<div class="tblWrap"><table><tr><th>Nhóm</th><th>Group ID</th><th>Cho dùng /ai</th><th>Giới hạn/ngày</th></tr>';
     list.forEach(function(g){
       h+='<tr><td>'+esc(g.name||'(chưa đặt tên)')+'</td><td><code>'+esc(g.id)+'</code></td>'+
         '<td style="white-space:nowrap"><button class="sec aiTg" data-id="'+esc(g.id)+'" data-on="'+(g.on?0:1)+'" style="margin:2px;padding:5px 10px">'+(g.on?'✅ Đang bật':'⛔ Đang tắt')+'</button></td>'+
-        '<td><b>'+esc(g.used)+'</b>/'+esc(g.limit)+'</td>'+
-        '<td style="white-space:nowrap"><input type="number" class="aiLim" data-id="'+esc(g.id)+'" value="'+esc(g.limit)+'" style="width:70px;padding:5px"> <button class="sec aiSave" data-id="'+esc(g.id)+'" style="margin:2px;padding:5px 8px">💾</button></td></tr>';
+        '<td style="white-space:nowrap"><input type="number" class="aiLim" data-id="'+esc(g.id)+'" data-on="'+(g.on?1:0)+'" value="'+esc(g.limit)+'" style="width:70px;padding:5px"> <button class="sec aiSave" data-id="'+esc(g.id)+'" style="margin:2px;padding:5px 8px">💾</button></td></tr>';
     });
-    w.innerHTML=h+'</table>';
+    w.innerHTML=h+'</table></div>';
   }).catch(function(e){ w.innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
 $('aiRefresh').addEventListener('click',loadAiGroups);
@@ -566,7 +583,9 @@ $('aiWrap').addEventListener('click',function(ev){
     var el=document.querySelector('.aiLim[data-id="'+gid+'"]');
     var v=el?parseInt(el.value,10):0;
     if(!v||v<1){ toast('Nhập số lượt/ngày từ 1 trở lên'); return; }
-    api('setAiGroup',{gid:gid,limit:v}).then(function(){ toast('Đã đặt '+v+' lượt/ngày'); loadAiGroups(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+    /* v2.1.0: phải gửi kèm trạng thái bật/tắt hiện tại, không thì lưu giới hạn sẽ vô tình TẮT /ai của nhóm */
+    var curOn=(el&&el.getAttribute('data-on')==='1')?1:0;
+    api('setAiGroup',{gid:gid,on:curOn,limit:v}).then(function(){ toast('Đã đặt '+v+' lượt/ngày'); loadAiGroups(); }).catch(function(e){ toast('Lỗi: '+e.message); });
   }
 });
 
@@ -578,42 +597,18 @@ $('apiRun').addEventListener('click',function(){
     var rows=(d&&d.rows)||d||[];
     var h='';
     if(d&&d.textLadder) h+='<p class="muted">📝 Thang dịch chữ: '+esc(d.textLadder)+'<br>🖼 Thang dịch ảnh: '+esc(d.imageLadder||'')+'</p>';
-    h+='<table><tr><th></th><th>Nguồn</th><th>Chữ</th><th>Ảnh</th><th>Chi tiết</th></tr>';
+    h+='<div class="tblWrap"><table><tr><th></th><th>Nguồn</th><th>Chữ</th><th>Ảnh</th><th>Chi tiết</th></tr>';
     rows.forEach(function(r){
       var icon=r.ok?'✅':(r.optional?'⬜':'❌');
       h+='<tr><td>'+icon+'</td><td><b>'+esc(r.name||r.provider)+'</b></td><td>'+(r.textRank?('#'+r.textRank):'—')+'</td><td>'+(r.imageRank?('#'+r.imageRank):'—')+'</td><td class="errDetail">'+esc(r.ok?(r.detail||'OK'):(r.err||''))+'</td></tr>';
     });
     var good=rows.filter(function(r){ return r.ok; }).length;
-    w.innerHTML=h+'</table><p class="muted">→ '+good+'/'+rows.length+' nguồn sẵn sàng. Dấu ⬜ là nguồn tùy chọn chưa có key, không phải lỗi.</p>';
+    w.innerHTML=h+'</table></div><p class="muted">→ '+good+'/'+rows.length+' nguồn sẵn sàng. Dấu ⬜ là nguồn tùy chọn chưa có key, không phải lỗi.</p>';
   }).catch(function(e){
     if(apiMissing_(e)) w.innerHTML='<span class="pill warn">Bản Code.gs đang chạy chưa mở api "testApi"</span><p class="muted">Trong lúc chờ, gõ <code>/testapi</code> khi nhắn riêng với bot — kết quả giống hệt bảng này.</p>';
     else w.innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>';
   }).then(function(){ btn.disabled=false; });
 });
-
-/* ===== TAB CHẾ ĐỘ CHẠY ===== */
-function paintMode(d){
-  var t=d&&d.mode==='webhook'?'⚡ Đang chạy WEBHOOK — trả lời tức thì'
-       :d&&d.mode==='polling'?'🕐 Đang chạy POLLING — hẹn giờ 1 phút/lần'
-       :'🔴 Bot đang tắt (không webhook, không hẹn giờ)';
-  $('modeNow').textContent=t;
-  $('modeMsg').innerHTML=(d&&d.hookUrl?('Link webhook: <code>'+esc(d.hookUrl)+'</code><br>'):'')+(d&&d.pending?('Đang có '+esc(d.pending)+' tin chờ xử lý<br>'):'')+'Ô <code>RUN_MODE</code> trong sheet Config: <b>'+esc((d&&d.runMode)||'(chưa có)')+'</b>';
-}
-function loadMode(){
-  $('modeNow').textContent='Đang kiểm tra...';
-  api('mode',{},45000).then(paintMode).catch(function(e){
-    if(apiMissing_(e)){ $('modeNow').textContent='—'; $('modeMsg').innerHTML='<span class="pill warn">Bản Code.gs đang chạy chưa mở api "mode"</span><br>Gõ <code>/mode</code> khi nhắn riêng với bot — bot hiện 2 nút Webhook / Polling để đổi.'; }
-    else { $('modeNow').textContent='—'; $('modeMsg').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; }
-  });
-}
-function setMode(m){
-  $('modeMsg').textContent='Đang chuyển...';
-  api('mode',{set:m},60000).then(function(d){ toast(m==='webhook'?'Đã chuyển sang Webhook':'Đã về Polling'); paintMode(d); })
-    .catch(function(e){ $('modeMsg').innerHTML='<span class="pill err">'+esc(e.message)+'</span><br><span class="muted">Cách khác: gõ <code>/mode</code> trong Telegram rồi bấm nút.</span>'; });
-}
-$('modeHook').addEventListener('click',function(){ setMode('webhook'); });
-$('modePoll').addEventListener('click',function(){ setMode('polling'); });
-$('modeRefresh').addEventListener('click',loadMode);
 
 /* ===== CẤU HÌNH (FIX #01 + #02) =====
  * Danh sách ô. secret:true = ô khóa bí mật, để trống thì KHÔNG gửi đi. */
