@@ -7,7 +7,7 @@
 <title>TEIN AI BOT — Bảng điều khiển</title>
 <!--
   ============================================================
-   TEIN AI BOT — MINI APP v2.1.0  (16/08/2026)
+   TEIN AI BOT — MINI APP v2.1.1  (16/08/2026)
    Dán thay TOÀN BỘ file index.html cũ trên GitHub.
    v2.0  : #01 không ghi rỗng đè cấu hình · #02 đủ 7 nguồn
            #07 esc() đầy đủ · #17 chặn nội dung quá dài trước khi gửi
@@ -17,6 +17,10 @@
            Bỏ tab Chế độ chạy (đã bỏ hẳn webhook từ Code.gs v2.0.8).
            Bảng dài tự cuộn ngang trong khung, không tràn ra ngoài
            (thử trên iPhone và PC).
+   v2.1.1: TRƯỢT NGANG TRÊN PC — thanh tab thêm 2 nút ‹ ›, lăn chuột dọc
+           trong thanh tab / trong bảng = trượt ngang, thanh cuộn ngang
+           của bảng dày hơn và luôn nhìn thấy. Trên điện thoại vẫn vuốt
+           tay như cũ (2 nút tự ẩn).
   ============================================================
 -->
 <style>
@@ -30,9 +34,18 @@ header .status{font-size:12px;margin-top:8px;display:flex;align-items:center;gap
 .dot{width:9px;height:9px;border-radius:50%;background:#64748b;display:inline-block;flex:0 0 auto;}
 .dot.live{background:var(--ok);box-shadow:0 0 0 3px rgba(34,197,94,.2);}
 .dot.bad{background:var(--err);box-shadow:0 0 0 3px rgba(239,68,68,.2);}
-.tabs{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--line);z-index:9;}
-.tabs::-webkit-scrollbar{height:4px;}
-.tabs::-webkit-scrollbar-thumb{background:#475569;border-radius:4px;}
+.tabsBar{display:flex;align-items:center;background:var(--card);border-bottom:1px solid var(--line);z-index:9;}
+.tabs{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px 14px 6px;flex:1;scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:#64748b var(--card);}
+.tabs::-webkit-scrollbar{height:8px;}
+.tabs::-webkit-scrollbar-track{background:#0b1220;border-radius:8px;}
+.tabs::-webkit-scrollbar-thumb{background:#64748b;border-radius:8px;}
+.tabs::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
+/* v2.1.0 — PC không lăn ngang được nên thêm 2 nút mũi tên; điện thoại vuốt tay nên ẩn đi */
+.tabNav{flex:0 0 auto;margin:0;padding:8px 11px;background:#334155;color:var(--txt);font-size:17px;line-height:1;border-radius:8px;}
+.tabNav.prev{margin-left:8px;}
+.tabNav.next{margin-right:8px;}
+.tabNav[disabled]{opacity:.25;cursor:default;}
+@media (hover:none){.tabNav{display:none;}}
 .tab{padding:8px 12px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--muted);white-space:nowrap;}
 .tab.active{background:var(--accent);color:#fff;}
 main{padding:16px;max-width:900px;margin:0 auto;}
@@ -53,10 +66,13 @@ th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-a
 th{color:var(--muted);}
 .errDetail{word-break:break-word;overflow-wrap:anywhere;max-width:340px;font-size:12px;}
 /* v2.1.0 — mọi bảng nằm trong khung, dài thì CUỘN NGANG chứ không tràn ra ngoài */
-.tblWrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tblWrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:#64748b #0b1220;}
 .tblWrap table{min-width:560px;}
-.tblWrap::-webkit-scrollbar{height:6px;}
-.tblWrap::-webkit-scrollbar-thumb{background:#475569;border-radius:6px;}
+/* thanh trượt ngang LUÔN nhìn thấy trên PC (chuột không lăn ngang được) */
+.tblWrap::-webkit-scrollbar{height:11px;}
+.tblWrap::-webkit-scrollbar-track{background:#0b1220;border-radius:8px;}
+.tblWrap::-webkit-scrollbar-thumb{background:#64748b;border-radius:8px;border:2px solid #0b1220;}
+.tblWrap::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
 th,td{word-break:break-word;overflow-wrap:anywhere;}
 input,textarea,select,button{max-width:100%;}
 code{word-break:break-all;}
@@ -93,7 +109,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <body>
 <header>
 <h1>🤖 TEIN AI BOT</h1>
-<div class="sub">Bảng điều khiển — <b>Mini App v2.1.0</b> <span id="verBox" class="muted"></span></div>
+<div class="sub">Bảng điều khiển — <b>Mini App v2.1.1</b> <span id="verBox" class="muted"></span></div>
 <div class="status" id="statusLine"><span class="dot" id="statusDot"></span> <span id="statusText">Đang kết nối...</span></div>
 </header>
 
@@ -112,7 +128,9 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 
 <!-- ỨNG DỤNG -->
 <div id="app" class="hidden">
-<div class="tabs">
+<div class="tabsBar">
+<button class="tabNav prev" id="tabPrev" title="Xem tab bên trái">‹</button>
+<div class="tabs" id="tabBox">
 <div class="tab active" data-p="broadcast">📣 Thông báo</div>
 <div class="tab" data-p="members">👥 Thành viên</div>
 <div class="tab" data-p="pusers">🙋 User riêng</div>
@@ -122,6 +140,8 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <div class="tab" data-p="activity">📜 Nhật ký</div>
 <div class="tab" data-p="errors">🩺 Nhật ký lỗi</div>
 <div class="tab" data-p="config">🔐 Cấu hình</div>
+</div>
+<button class="tabNav next" id="tabNext" title="Xem tab bên phải">›</button>
 </div>
 <main>
 
@@ -347,9 +367,40 @@ document.querySelectorAll('.tab').forEach(function(tab){
     tab.classList.add('active');
     var p=tab.getAttribute('data-p');
     $('p-'+p).classList.add('active');
+    try{ tab.scrollIntoView({inline:'nearest',block:'nearest',behavior:'smooth'}); }catch(e){}
     if(p==='ai') setTimeout(loadAiGroups,60);
   });
 });
+
+/* v2.1.0 — TRƯỢT NGANG TRÊN PC
+ * Điện thoại vuốt tay được, còn chuột PC không lăn ngang được, nên:
+ *  1) hai nút ‹ › hai đầu thanh tab (tự mờ đi khi đã hết đầu / hết cuối)
+ *  2) lăn chuột dọc khi trỏ đang nằm trong thanh tab hoặc trong bảng = trượt ngang
+ *  3) thanh trượt ngang của bảng luôn hiện, đủ dày để kéo bằng chuột */
+var TABBOX=$('tabBox');
+function tabNavState(){
+  if(!TABBOX) return;
+  var max=TABBOX.scrollWidth-TABBOX.clientWidth-1;
+  var p=$('tabPrev'), n=$('tabNext');
+  var hide=(max<=0);
+  if(p){ p.disabled=hide||TABBOX.scrollLeft<=0; p.style.visibility=hide?'hidden':'visible'; }
+  if(n){ n.disabled=hide||TABBOX.scrollLeft>=max; n.style.visibility=hide?'hidden':'visible'; }
+}
+function tabScroll(d){ if(!TABBOX) return; var step=Math.max(140,Math.round(TABBOX.clientWidth*0.6)); try{ TABBOX.scrollBy({left:d*step,behavior:'smooth'}); }catch(e){ TABBOX.scrollLeft+=d*step; } }
+if($('tabPrev')) $('tabPrev').addEventListener('click',function(){ tabScroll(-1); });
+if($('tabNext')) $('tabNext').addEventListener('click',function(){ tabScroll(1); });
+if(TABBOX) TABBOX.addEventListener('scroll',tabNavState);
+window.addEventListener('resize',tabNavState);
+setTimeout(tabNavState,150);
+document.addEventListener('wheel',function(ev){
+  var el=(ev.target&&ev.target.closest)?ev.target.closest('.tblWrap,.tabs'):null;
+  if(!el) return;
+  if(el.scrollWidth<=el.clientWidth+1) return;
+  if(Math.abs(ev.deltaY)<=Math.abs(ev.deltaX)) return;
+  var before=el.scrollLeft;
+  el.scrollLeft=before+ev.deltaY;
+  if(el.scrollLeft!==before) ev.preventDefault();
+},{passive:false});
 
 /* ===== Nhóm ===== */
 function renderGroups(){
