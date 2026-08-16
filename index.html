@@ -4,28 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<title>TEIN AI BOT</title>
+<title>TEIN AI BOT — Bảng điều khiển</title>
+<!--
+  ============================================================
+   TEIN AI BOT — MINI APP v2.0  (16/08/2026)
+   Dán thay TOÀN BỘ file index.html cũ trên GitHub.
+   Sửa: #01 không bao giờ ghi rỗng đè cấu hình · #02 đủ 7 nguồn
+         #07 esc() đầy đủ · #17 chặn nội dung quá dài trước khi gửi
+   Thêm: tab Kiểm tra API · tab Chế độ chạy (Webhook/Polling)
+  ============================================================
+-->
 <style>
-:root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--ok:#22c55e;--err:#ef4444;}
+:root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;}
 *{box-sizing:border-box;}
 body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);}
-header{padding:16px 20px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;}
-header h1{margin:0;font-size:22px;letter-spacing:.5px;}
+header{padding:14px 18px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;}
+header h1{margin:0;font-size:21px;letter-spacing:.5px;}
 header .sub{color:var(--muted);font-size:12px;margin-top:2px;}
 header .status{font-size:12px;margin-top:8px;display:flex;align-items:center;gap:7px;color:var(--muted);}
 .dot{width:9px;height:9px;border-radius:50%;background:#64748b;display:inline-block;flex:0 0 auto;}
 .dot.live{background:var(--ok);box-shadow:0 0 0 3px rgba(34,197,94,.2);}
 .dot.bad{background:var(--err);box-shadow:0 0 0 3px rgba(239,68,68,.2);}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:86px;z-index:9;}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:84px;z-index:9;}
 .tab{padding:8px 12px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--muted);white-space:nowrap;}
 .tab.active{background:var(--accent);color:#fff;}
 main{padding:16px;max-width:900px;margin:0 auto;}
 .panel{display:none;}
 .panel.active{display:block;}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px;}
-.card h2{margin:0 0 12px;font-size:15px;}
+.card h2{margin:0 0 10px;font-size:15px;}
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px;}
 input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font-size:14px;}
+input.dirty,textarea.dirty,select.dirty{border-color:var(--warn);}
 textarea{min-height:90px;resize:vertical;}
 button{background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:14px;cursor:pointer;margin-top:10px;}
 button.sec{background:#475569;}
@@ -33,29 +43,33 @@ button.danger{background:var(--err);}
 button:disabled{opacity:.5;}
 table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;}
 th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top;}
-.errDetail{word-break:break-all;overflow-wrap:anywhere;max-width:360px;font-size:12px;}
-#errWrap{overflow-x:auto;}
 th{color:var(--muted);}
+.errDetail{word-break:break-all;overflow-wrap:anywhere;max-width:360px;font-size:12px;}
+#errWrap,#apiWrap{overflow-x:auto;}
 .row{display:flex;gap:10px;flex-wrap:wrap;}
-.row>div{flex:1;min-width:140px;}
+.row>div{flex:1;min-width:150px;}
 .chk{display:flex;align-items:center;gap:8px;padding:6px 0;}
 .chk input{width:auto;}
-.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#334155;}
 .pill.ok{background:rgba(34,197,94,.2);color:var(--ok);}
 .pill.err{background:rgba(239,68,68,.2);color:var(--err);}
+.pill.warn{background:rgba(245,158,11,.2);color:var(--warn);}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111827;border:1px solid var(--line);padding:12px 18px;border-radius:10px;opacity:0;transition:.3s;z-index:50;max-width:90%;}
 .toast.show{opacity:1;}
 .muted{color:var(--muted);font-size:12px;}
 code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 .gate{max-width:420px;margin:40px auto;}
 .hidden{display:none!important;}
-.linkbtn{background:none;color:var(--muted);text-decoration:underline;padding:0;margin:0;font-size:12px;}
+.linkbtn{background:none;color:var(--muted);text-decoration:underline;padding:0;margin:0 12px 0 0;font-size:12px;}
+.modebox{display:flex;gap:10px;flex-wrap:wrap;}
+.modebox button{flex:1;min-width:150px;}
+.big{font-size:16px;font-weight:600;}
 </style>
 </head>
 <body>
 <header>
 <h1>🤖 TEIN AI BOT</h1>
-<div class="sub">Bảng điều khiển bot</div>
+<div class="sub">Bảng điều khiển — <b>Mini App v2.0</b> <span id="verBox" class="muted"></span></div>
 <div class="status" id="statusLine"><span class="dot" id="statusDot"></span> <span id="statusText">Đang kết nối...</span></div>
 </header>
 
@@ -63,9 +77,9 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <div id="gate" class="gate hidden">
 <div class="card">
 <h2>🔑 Nhập mã quản trị</h2>
-<p class="muted">Dán ADMIN_KEY (lấy trong sheet Config của bot). Máy sẽ nhớ, lần sau không cần nhập lại.</p>
+<p class="muted">Dán ADMIN_KEY (lấy trong sheet Config, hoặc gõ /web trong bot). Máy sẽ nhớ, lần sau không cần nhập lại.</p>
 <input id="gateKey" placeholder="Dán ADMIN_KEY tại đây" autocomplete="off">
-<p class="muted" style="margin-top:10px">Link <b>/exec</b> của bot — tự điền khi mở từ lệnh /web. Chỉ nhập tay nếu mở trực tiếp bằng trình duyệt.</p>
+<p class="muted" style="margin-top:10px">Link <b>/exec</b> của bot — tự điền khi mở từ lệnh /web. Chỉ nhập tay nếu mở trực tiếp bằng trình duyệt. Đổi link này là chuyển sang bot khác — 1 file dùng cho cả bot beta và bot chính.</p>
 <input id="gateExec" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
 <button id="gateBtn">✅ Lưu &amp; kết nối</button>
 <div id="gateMsg" class="muted" style="margin-top:8px"></div>
@@ -75,11 +89,13 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <!-- ỨNG DỤNG -->
 <div id="app" class="hidden">
 <div class="tabs">
-<div class="tab active" data-p="broadcast">📢 Thông báo</div>
+<div class="tab active" data-p="broadcast">📣 Thông báo</div>
 <div class="tab" data-p="members">👥 Thành viên</div>
 <div class="tab" data-p="pusers">🙋 User riêng</div>
 <div class="tab" data-p="groups">🗂 Nhóm</div>
 <div class="tab" data-p="ai">🤖 Trợ lý AI</div>
+<div class="tab" data-p="api">🔧 Kiểm tra API</div>
+<div class="tab" data-p="mode">⚙️ Chế độ chạy</div>
 <div class="tab" data-p="activity">📜 Nhật ký</div>
 <div class="tab" data-p="errors">🩺 Nhật ký lỗi</div>
 <div class="tab" data-p="config">🔐 Cấu hình</div>
@@ -89,12 +105,13 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <div class="panel active" id="p-broadcast">
 <div class="card">
 <h2>Gửi thông báo tới nhóm</h2>
-<label>Nội dung</label>
+<label>Nội dung <span class="muted">(tối đa ~1200 ký tự — dài hơn thì gửi bằng lệnh /thongbao trong Telegram)</span></label>
 <textarea id="bcContent" placeholder="Nhập nội dung..."></textarea>
-<label>Chọn nơi gửi (tích nhiều nhóm tùy ý)</label>
+<div class="muted" id="bcCount">0 ký tự</div>
+<label>Chọn nơi gửi</label>
 <div class="chk"><input type="checkbox" id="bcAll"><label for="bcAll" style="margin:0;color:var(--txt)">Tất cả các nhóm</label></div>
 <div id="bcGroups"></div>
-<button id="bcSend">📢 Gửi thông báo</button>
+<button id="bcSend">📣 Gửi thông báo</button>
 </div>
 </div>
 
@@ -125,8 +142,8 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <div class="panel" id="p-pusers">
 <div class="card">
 <h2>Người dùng riêng (nhắn riêng với bot)</h2>
-<p class="muted">Người lạ nhắn riêng bot sẽ hiện ở đây để bạn duyệt / từ chối / chặn. User đã duyệt chỉ dùng được <b>/dich</b> và <b>/time</b>.</p>
-<button class="sec" id="puRefresh" onclick="loadPrivateUsers()">🔄 Làm mới</button>
+<p class="muted">Người lạ nhắn riêng bot sẽ hiện ở đây để duyệt / từ chối / chặn. User đã duyệt chỉ dùng được <b>/dich</b>, <b>/time</b>, <b>/user</b>.</p>
+<button class="sec" id="puRefresh">🔄 Làm mới</button>
 <div id="puWrap" style="margin-top:8px"><p class="muted">Đang tải...</p></div>
 </div>
 </div>
@@ -149,17 +166,39 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <div class="panel" id="p-ai">
 <div class="card">
 <h2>Trợ lý AI (lệnh /ai)</h2>
-<p class="muted">Mặc định <b>chỉ admin</b> dùng được <b>/ai</b> khi nhắn riêng với bot. Bật công tắc bên dưới để cho phép từng nhóm dùng, và đặt giới hạn lượt mỗi ngày cho nhóm đó. Trong nhóm, bot nhớ <b>chung một mạch hội thoại</b> và gọi tên người vừa hỏi khi trả lời.</p>
+<p class="muted">Mặc định <b>chỉ admin</b> dùng được <b>/ai</b> khi nhắn riêng. Bật công tắc bên dưới để cho phép từng nhóm dùng.</p>
 <div id="aiInfo" class="muted" style="margin-bottom:8px"></div>
-<button class="sec" id="aiRefresh" onclick="loadAiGroups()">🔄 Làm mới</button>
+<button class="sec" id="aiRefresh">🔄 Làm mới</button>
 <div id="aiWrap" style="margin-top:8px"><p class="muted">Đang tải...</p></div>
+</div>
+</div>
+
+<div class="panel" id="p-api">
+<div class="card">
+<h2>🔧 Kiểm tra tất cả nguồn dịch</h2>
+<p class="muted">Bảng này <b>chỉ đọc</b> — không ghi đè gì vào Sheet. Gọi thật từng nhà cung cấp để biết key còn sống và tên model còn tồn tại hay không. Mất khoảng 10-20 giây.</p>
+<button id="apiRun">▶️ Kiểm tra ngay</button>
+<div id="apiWrap" style="margin-top:10px"><p class="muted">Chưa chạy lần nào.</p></div>
+</div>
+</div>
+
+<div class="panel" id="p-mode">
+<div class="card">
+<h2>⚙️ Chế độ chạy của bot</h2>
+<div id="modeNow" class="big" style="margin:6px 0 10px">Đang kiểm tra...</div>
+<div class="modebox">
+<button id="modeHook">⚡ Chuyển sang WEBHOOK (trả lời tức thì)</button>
+<button class="sec" id="modePoll">🕐 Về POLLING (hẹn giờ 1 phút)</button>
+</div>
+<button class="sec" id="modeRefresh">🔄 Xem lại trạng thái</button>
+<div id="modeMsg" class="muted" style="margin-top:10px"></div>
+<p class="muted" style="margin-top:12px"><b>Webhook</b>: Telegram đẩy tin thẳng vào bot → trả lời ngay, không ăn quota hẹn giờ. Nhược: mỗi lần Triển khai phiên bản mới mà link /exec đổi thì phải bật lại.<br><b>Polling</b>: bot tự hỏi Telegram mỗi phút → ổn định, không phụ thuộc link, nhưng tin đầu tiên có thể chậm tối 1 phút và ăn quota 90 phút/ngày.<br>Đổi ở đây hoặc gõ <code>/mode</code> trong Telegram — ô <code>RUN_MODE</code> trong sheet Config luôn được cập nhật theo.</p>
 </div>
 </div>
 
 <div class="panel" id="p-activity">
 <div class="card">
 <h2>Nhật ký hoạt động gần đây</h2>
-<p class="muted">Các thao tác quản trị: gửi thông báo, thêm/xoá thành viên & nhóm, đổi cấu hình.</p>
 <button class="sec" id="actRefresh">🔄 Làm mới</button>
 <div id="actWrap" style="margin-top:8px"></div>
 </div>
@@ -175,50 +214,16 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 
 <div class="panel" id="p-config">
 <div class="card">
-<h2>API dịch thuật</h2>
-<label>Nhà cung cấp</label>
-<select id="cfgProvider">
-<option value="google_free">google_free (miễn phí, không cần key)</option>
-<option value="mymemory">mymemory (miễn phí dự phòng)</option>
-<option value="google_v2">google_v2 (Google Cloud, cần API key)</option>
-</select>
-<label>API Key (chỉ cần khi dùng google_v2)</label>
-<input id="cfgApiKey" placeholder="Dán API key nếu có">
-<label>OpenRouter API key <span class="muted">(openrouter.ai/keys — 1 key dùng được hàng trăm model, dùng cho cả /ai)</span></label>
-<input id="cfgOrKey" placeholder="sk-or-v1-... (nhiều key thì cách nhau dấu phẩy)">
-<label>Danh sách model OpenRouter <span class="muted">(cách nhau dấu phẩy — bot thử LẦN LƯỢT TỪ TRÊN XUỐNG)</span></label>
-<input id="cfgOrModels" placeholder="vd: deepseek/deepseek-chat-v3.1:free,google/gemma-3-27b-it:free,openrouter/free">
-<label>Model Groq <span class="muted">(cũng cách nhau dấu phẩy, thử từ trên xuống)</span></label>
-<input id="cfgGroqModels" placeholder="vd: llama-3.3-70b-versatile,meta-llama/llama-4-scout-17b-16e-instruct">
-<label>Giới hạn /ai mặc định cho 1 nhóm (lượt/ngày)</label>
-<input id="cfgAiLimit" type="number" placeholder="vd: 20">
-<button class="sec" id="apiCheck">🧪 Kiểm tra API dịch</button>
-<div id="apiCheckBox" class="muted" style="margin-top:8px"></div>
-</div>
-<div class="card">
-<h2>Cấu hình bot</h2>
-<label>Lệnh bí mật (SECRET_CMD)</label>
-<input id="cfgSecret">
-<div class="row">
-<div><label>Chờ giữa 2 lần /all (giây)</label><input id="cfgCdAll" type="number"></div>
-<div><label>Chờ giữa 2 lần /dich (giây)</label><input id="cfgCdDich" type="number"></div>
-</div>
-<label>Giới hạn dịch/ngày cho user riêng</label>
-<input id="cfgDaily" type="number" placeholder="vd: 30">
-<label>Kiểu copy bản dịch (áp dụng cho mọi bản dịch)</label>
-<select id="cfgCopyMode">
-<option value="tap">Chạm để copy (copy cả khối)</option>
-<option value="select">Bôi chọn thủ công</option>
-</select>
-<label>Admin ID</label>
-<input id="cfgAdminId">
-<label>Bot Token (để trống nếu không đổi)</label>
-<input id="cfgToken" placeholder="Đang dùng: đã ẩn">
-<button id="cfgSave">💾 Lưu cấu hình</button>
+<h2>⚙️ Cấu hình bot</h2>
+<p class="muted">An toàn: Mini App <b>chỉ gửi đúng những ô anh vừa sửa</b> (ô sửa sẽ viền vàng). Ô không chạm thì không gửi → không bao giờ ghi rỗng đè cấu hình như bản cũ. Ô khóa bí mật để trống = giữ nguyên.</p>
+<div id="cfgWrap"></div>
+<button id="cfgSave">💾 Lưu những ô vừa sửa</button>
+<button class="sec" id="cfgReset">↩️ Bỏ sửa, lấy lại giá trị cũ</button>
+<div id="cfgMsg" class="muted" style="margin-top:8px"></div>
 </div>
 <div class="card">
 <button class="linkbtn" id="changeKey">Đổi mã quản trị</button>
-<button class="linkbtn" id="changeExec">Đổi link /exec</button>
+<button class="linkbtn" id="changeExec">Đổi link /exec (chuyển bot)</button>
 </div>
 </div>
 
@@ -229,107 +234,116 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <script>
 try { if (window.Telegram && Telegram.WebApp) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); document.body.style.paddingBottom='80px'; } } catch(e){}
 
-/* Link /exec KHONG can dan tay: bot tu gan vao URL khi go /web, sau do luu lai o may.
-   Nho vay 1 file index.html dung duoc cho BAT KY bot nao. */
+/* ===== FIX #07: escape đầy đủ cả " và ' ===== */
+function esc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function $(id){ return document.getElementById(id); }
+function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },2800); }
+function setStatus(kind,text){ var d=$('statusDot'); d.className='dot'+(kind==='live'?' live':kind==='bad'?' bad':''); $('statusText').textContent=text; }
+
+/* ===== Link /exec: tự nhận từ lệnh /web, nhớ lại ở máy ===== */
 function param_(name){
-  var out = "";
-  var m = new RegExp("[?&]" + name + "=([^&#]*)").exec(String(location.search || ""));
-  if (!m) m = new RegExp("(?:^|[#&])" + name + "=([^&]*)").exec(String(location.hash || ""));
-  if (!m) { try { var sp = Telegram.WebApp.initDataUnsafe.start_param || ""; if (sp.indexOf(name + "=") === 0) out = sp.slice(name.length + 1); } catch(e){} }
-  if (m) out = m[1];
-  try { out = decodeURIComponent(out); } catch(e){}
+  var out="";
+  var m=new RegExp("[?&]"+name+"=([^&#]*)").exec(String(location.search||""));
+  if(!m) m=new RegExp("(?:^|[#&])"+name+"=([^&]*)").exec(String(location.hash||""));
+  if(!m){ try{ var sp=Telegram.WebApp.initDataUnsafe.start_param||""; if(sp.indexOf(name+"=")===0) out=sp.slice(name.length+1); }catch(e){} }
+  if(m) out=m[1];
+  try{ out=decodeURIComponent(out); }catch(e){}
   return out;
 }
 function normExec_(u){
-  u = String(u || "").trim().replace(/[#?].*$/, "").replace(/\/+$/, "");
-  if (!u) return "";
-  if (!/^https?:\/\//i.test(u)) return "";
-  u = u.replace(/\/dev$/i, "/exec");
-  if (!/\/exec$/i.test(u)) { if (/script\.google\.com\/macros\/s\//i.test(u)) u += "/exec"; else return ""; }
+  u=String(u||"").trim().replace(/[#?].*$/,"").replace(/\/+$/,"");
+  if(!u) return "";
+  if(!/^https?:\/\//i.test(u)) return "";
+  u=u.replace(/\/dev$/i,"/exec");
+  if(!/\/exec$/i.test(u)){ if(/script\.google\.com\/macros\/s\//i.test(u)) u+="/exec"; else return ""; }
   return u;
 }
 function getExec(){
-  var e = normExec_(param_("exec"));
-  if (e) { try { localStorage.setItem("tein_exec", e); } catch(_){} return e; }
-  try { return localStorage.getItem("tein_exec") || ""; } catch(_){ return ""; }
+  var e=normExec_(param_("exec"));
+  if(e){ try{ localStorage.setItem("tein_exec",e); }catch(_){} return e; }
+  try{ return localStorage.getItem("tein_exec")||""; }catch(_){ return ""; }
 }
-function setExec(u){ u = normExec_(u); if (!u) return false; try { localStorage.setItem("tein_exec", u); } catch(_){} API_URL = u; return true; }
-// Goi API bang JSONP: chen the <script> nen khong bi CORS chan nhu fetch
-function jsonp_(url){
-  return new Promise(function(resolve, reject){
-    var cb = "tein_cb_" + Date.now() + "_" + Math.floor(Math.random()*100000);
-    var s = document.createElement("script");
-    var done = false;
-    function cleanup(){ try { delete window[cb]; } catch(e){ window[cb] = undefined; } if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(timer); }
-    var timer = setTimeout(function(){ if(done) return; done = true; cleanup(); reject(new Error("Máy chủ không trả lời (quá 30 giây). Kiểm tra link /exec và quyền Deploy = Anyone.")); }, 30000);
-    window[cb] = function(j){ if(done) return; done = true; cleanup(); if (j && j.ok) resolve(j.data); else reject(new Error((j && j.error) || "Lỗi không rõ")); };
-    s.onerror = function(){ if(done) return; done = true; cleanup(); reject(new Error("Không gọi được máy chủ. Link đang dùng: " + API_URL + " — kiểm tra Deploy > Manage deployments > Who has access = Anyone.")); };
-    s.src = url + "&callback=" + cb;
-    (document.body || document.documentElement).appendChild(s);
+function setExec(u){ u=normExec_(u); if(!u) return false; try{ localStorage.setItem("tein_exec",u); }catch(_){} API_URL=u; return true; }
+
+/* ===== JSONP (không bị CORS chặn như fetch) ===== */
+var JSONP_MAX=1800; // FIX #17: URL dài hơn ngưỡng này rất dễ bị cắt giữa đường
+function jsonp_(url, ms){
+  return new Promise(function(resolve,reject){
+    var cb="tein_cb_"+Date.now()+"_"+Math.floor(Math.random()*100000);
+    var s=document.createElement("script");
+    var done=false;
+    function cleanup(){ try{ delete window[cb]; }catch(e){ window[cb]=undefined; } if(s.parentNode) s.parentNode.removeChild(s); clearTimeout(timer); }
+    var timer=setTimeout(function(){ if(done)return; done=true; cleanup(); reject(new Error("Máy chủ không trả lời (quá "+Math.round((ms||30000)/1000)+" giây). Kiểm tra link /exec và quyền Deploy = Anyone.")); }, ms||30000);
+    window[cb]=function(j){ if(done)return; done=true; cleanup(); if(j&&j.ok) resolve(j.data); else reject(new Error((j&&j.error)||"Lỗi không rõ")); };
+    s.onerror=function(){ if(done)return; done=true; cleanup(); reject(new Error("Không gọi được máy chủ. Link đang dùng: "+API_URL+" — kiểm tra Deploy > Manage deployments > Who has access = Anyone.")); };
+    s.src=url+"&callback="+cb;
+    (document.body||document.documentElement).appendChild(s);
   });
 }
-var API_URL = getExec();
-var STATE = { groups: [], config: {} };
+var API_URL=getExec();
+var STATE={ groups:[], config:{} };
 
-function cleanKey(k){ return String(k||'').replace(/^#/, '').split('?')[0].split('&')[0].replace(/tgWebApp[\s\S]*$/i,'').trim(); }
+function cleanKey(k){ return String(k||'').replace(/^#/,'').split('?')[0].split('&')[0].replace(/tgWebApp[\s\S]*$/i,'').trim(); }
 function getKey(){ var h=cleanKey(location.hash||''); return h || localStorage.getItem('tein_key') || ''; }
-function setKey(k){ localStorage.setItem('tein_key', k); }
-var ADMIN_KEY = getKey();
+function setKey(k){ try{ localStorage.setItem('tein_key',k); }catch(e){} }
+var ADMIN_KEY=getKey();
 
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function $(id){return document.getElementById(id);}
-function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2600);}
-function setStatus(kind,text){var d=$('statusDot');d.className='dot'+(kind==='live'?' live':kind==='bad'?' bad':'');$('statusText').textContent=text;}
-
-function api(action, params){
-  params = params || {};
-  var qs = '?api=' + encodeURIComponent(action) + '&key=' + encodeURIComponent(ADMIN_KEY);
-  Object.keys(params).forEach(function(k){
-    var v = params[k];
-    if (v !== null && typeof v === 'object') v = JSON.stringify(v);
-    qs += '&' + k + '=' + encodeURIComponent(v==null?'':v);
-  });
-  if (!API_URL) return Promise.reject(new Error("Chưa có link /exec của bot. Hãy gõ /web trong bot rồi bấm nút mở Bảng điều khiển, hoặc dán link /exec ở ô bên dưới."));
-  return jsonp_(API_URL + qs);
+function api(action, params, ms){
+  params=params||{};
+  var qs='?api='+encodeURIComponent(action)+'&key='+encodeURIComponent(ADMIN_KEY);
+  var keys=Object.keys(params);
+  for(var i=0;i<keys.length;i++){
+    var v=params[keys[i]];
+    if(v!==null && typeof v==='object') v=JSON.stringify(v);
+    qs+='&'+keys[i]+'='+encodeURIComponent(v==null?'':v);
+  }
+  if(!API_URL) return Promise.reject(new Error("Chưa có link /exec của bot. Gõ /web trong bot rồi bấm nút Bảng điều khiển, hoặc dán link /exec ở ô bên dưới."));
+  if(qs.length>JSONP_MAX) return Promise.reject(new Error("Nội dung quá dài để gửi qua Mini App ("+qs.length+" ký tự). Hãy rút ngắn, hoặc dùng lệnh trong Telegram."));
+  return jsonp_(API_URL+qs, ms);
 }
+function apiMissing_(e){ return /không biết|unknown|không hợp lệ|invalid api|no api/i.test(String(e&&e.message)); }
 
 /* ===== Cổng nhập mã ===== */
 function showGate(msg){
   $('app').classList.add('hidden');
   $('gate').classList.remove('hidden');
-  $('gateKey').value = ADMIN_KEY || '';
-  try { $('gateExec').value = API_URL || ''; } catch(e){}
-  $('gateMsg').innerHTML = (msg ? ('<span class="pill err">'+esc(msg)+'</span><br>') : '') + '<span class="muted">Link đang dùng: ' + esc(API_URL || '(chưa có)') + '</span>';
+  $('gateKey').value=ADMIN_KEY||'';
+  try{ $('gateExec').value=API_URL||''; }catch(e){}
+  $('gateMsg').innerHTML=(msg?('<span class="pill err">'+esc(msg)+'</span><br>'):'')+'<span class="muted">Link đang dùng: '+esc(API_URL||'(chưa có)')+'</span>';
   setStatus('bad','Chưa kết nối');
 }
-function showApp(){
-  $('gate').classList.add('hidden');
-  $('app').classList.remove('hidden');
-}
-$('gateBtn').addEventListener('click', function(){
-  var k = cleanKey($('gateKey').value);
+function showApp(){ $('gate').classList.add('hidden'); $('app').classList.remove('hidden'); }
+$('gateBtn').addEventListener('click',function(){
+  var k=cleanKey($('gateKey').value);
   if(!k){ $('gateMsg').innerHTML='<span class="pill err">Hãy dán mã</span>'; return; }
-  var exv = ($('gateExec') ? $('gateExec').value : '');
-  if (String(exv||'').trim()) { if(!setExec(exv)){ $('gateMsg').innerHTML='<span class="pill err">Link /exec không hợp lệ (phải kết thúc bằng /exec)</span>'; return; } }
-  if (!API_URL) { $('gateMsg').innerHTML='<span class="pill err">Chưa có link /exec</span>'; return; }
-  ADMIN_KEY = k; setKey(k);
+  var exv=($('gateExec')?$('gateExec').value:'');
+  if(String(exv||'').trim()){ if(!setExec(exv)){ $('gateMsg').innerHTML='<span class="pill err">Link /exec không hợp lệ (phải kết thúc bằng /exec)</span>'; return; } }
+  if(!API_URL){ $('gateMsg').innerHTML='<span class="pill err">Chưa có link /exec</span>'; return; }
+  ADMIN_KEY=k; setKey(k);
   setStatus('','Đang kết nối...');
   refresh(true);
 });
-$('changeKey').addEventListener('click', function(){ showGate(''); });
-$('changeExec').addEventListener('click', function(){ showGate('Dán lại link /exec rồi bấm Lưu và kết nối.'); });
+$('changeKey').addEventListener('click',function(){ showGate(''); });
+$('changeExec').addEventListener('click',function(){ showGate('Dán lại link /exec rồi bấm Lưu và kết nối.'); });
 
 /* ===== Tabs ===== */
 document.querySelectorAll('.tab').forEach(function(tab){
   tab.addEventListener('click',function(){
-    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
     tab.classList.add('active');
-    $('p-'+tab.getAttribute('data-p')).classList.add('active');
+    var p=tab.getAttribute('data-p');
+    $('p-'+p).classList.add('active');
+    if(p==='ai') setTimeout(loadAiGroups,60);
+    if(p==='mode') setTimeout(loadMode,60);
   });
 });
 
-/* ===== Render ===== */
+/* ===== Nhóm ===== */
 function renderGroups(){
   var bc=$('bcGroups'); bc.innerHTML='';
   STATE.groups.forEach(function(g){
@@ -337,28 +351,45 @@ function renderGroups(){
     bc.innerHTML+='<div class="chk"><input type="checkbox" class="bcg" value="'+esc(g.id)+'" id="'+id+'"><label for="'+id+'" style="margin:0;color:var(--txt)">'+esc(g.name||g.id)+'</label></div>';
   });
   var sel=$('memGroup'); var cur=sel.value; sel.innerHTML='<option value="">-- chọn nhóm --</option>';
-  STATE.groups.forEach(function(g){var o=document.createElement('option');o.value=g.id;o.textContent=(g.name||g.id);sel.appendChild(o);});
+  STATE.groups.forEach(function(g){ var o=document.createElement('option'); o.value=g.id; o.textContent=(g.name||g.id); sel.appendChild(o); });
   if(cur) sel.value=cur;
   var gw=$('grpWrap');
-  if(!STATE.groups.length){ gw.innerHTML='<p class="muted">Chưa có nhóm nào. Bot sẽ tự thêm khi được kéo vào nhóm, hoặc thêm thủ công bên dưới.</p>'; return; }
+  if(!STATE.groups.length){ gw.innerHTML='<p class="muted">Chưa có nhóm nào.</p>'; return; }
   var h='<table><tr><th>Tên</th><th>Group ID</th><th></th></tr>';
   STATE.groups.forEach(function(g){
     h+='<tr><td><input value="'+esc(g.name)+'" class="gname" data-id="'+esc(g.id)+'" style="padding:6px"></td><td><code>'+esc(g.id)+'</code></td><td><button class="sec btnRename" data-id="'+esc(g.id)+'">Lưu tên</button> <button class="danger btnDelGroup" data-id="'+esc(g.id)+'">Xoá</button></td></tr>';
   });
   gw.innerHTML=h+'</table>';
 }
+$('grpWrap').addEventListener('click',function(ev){
+  var b=ev.target;
+  if(b.classList.contains('btnRename')){
+    var gid=b.getAttribute('data-id');
+    var inp=document.querySelector('.gname[data-id="'+gid+'"]');
+    api('renameGroup',{gid:gid,name:inp?inp.value:''}).then(function(){ toast('Đã lưu tên'); return refresh(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+  }else if(b.classList.contains('btnDelGroup')){
+    if(!confirm('Xoá nhóm này?')) return;
+    api('deleteGroup',{gid:b.getAttribute('data-id')}).then(function(){ toast('Đã xoá nhóm'); return refresh(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+  }
+});
+$('addGrpBtn').addEventListener('click',function(){
+  var gid=$('addGid').value.trim(), nm=$('addGname').value.trim();
+  if(!gid){ toast('Cần Group ID'); return; }
+  api('addGroup',{gid:gid,name:nm}).then(function(){ toast('Đã thêm nhóm'); $('addGid').value=''; $('addGname').value=''; return refresh(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+});
 
+/* ===== Thành viên ===== */
 var MEMBERS=[];
 function renderMembers(){
   var gid=$('memGroup').value;
   var q=($('memSearch').value||'').toLowerCase().trim();
   if(!MEMBERS.length){ $('memWrap').innerHTML='<p class="muted">Nhóm này chưa có thành viên.</p>'; return; }
   var list=MEMBERS.filter(function(m){
-    if(!q)return true;
+    if(!q) return true;
     return (String(m.hoTen||'').toLowerCase().indexOf(q)>=0)||(String(m.username||'').toLowerCase().indexOf(q)>=0)||(String(m.userId||'').toLowerCase().indexOf(q)>=0);
   });
-  if(!list.length){ $('memWrap').innerHTML='<p class="muted">Không tìm thấy thành viên khớp "'+esc(q)+'".</p>'; return; }
-  var h='<p class="muted">'+list.length+'/'+MEMBERS.length+' thành viên</p><table><tr><th>Tên</th><th>Username</th><th>User ID</th><th>Ngày tham gia</th><th></th></tr>';
+  if(!list.length){ $('memWrap').innerHTML='<p class="muted">Không tìm thấy thành viên khớp.</p>'; return; }
+  var h='<p class="muted">'+list.length+'/'+MEMBERS.length+' thành viên</p><table><tr><th>Tên</th><th>Username</th><th>User ID</th><th>Ngày vào</th><th></th></tr>';
   list.forEach(function(m){
     h+='<tr><td>'+esc(m.hoTen)+'</td><td>'+(m.username?('@'+esc(m.username)):'<span class="muted">(không có)</span>')+'</td><td><code>'+esc(m.userId)+'</code></td><td class="muted">'+esc(m.ngay||'')+'</td><td><button class="danger btnDelMem" data-gid="'+esc(gid)+'" data-uid="'+esc(m.userId)+'">Xoá</button></td></tr>';
   });
@@ -369,232 +400,314 @@ function loadMembers(){
   MEMBERS=[];
   if(!gid){ $('memWrap').innerHTML='<p class="muted">Chọn một nhóm để xem thành viên.</p>'; return; }
   $('memWrap').innerHTML='<p class="muted">Đang tải...</p>';
-  api('members',{gid:gid}).then(function(list){
-    MEMBERS=list||[];
-    renderMembers();
-  }).catch(function(e){ $('memWrap').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
+  api('members',{gid:gid}).then(function(list){ MEMBERS=list||[]; renderMembers(); })
+    .catch(function(e){ $('memWrap').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
-$('memGroup').addEventListener('change', loadMembers);
-$('memSearch').addEventListener('input', renderMembers);
-$('memExport').addEventListener('click', function(){
-  if(!MEMBERS.length){ toast('Chưa có dữ liệu để xuất'); return; }
-  var gsel=$('memGroup'); var gname=(gsel.options[gsel.selectedIndex]?gsel.options[gsel.selectedIndex].text:'nhom');
-  var rows=[['HoTen','Username','UserID','NgayThamGia']];
-  MEMBERS.forEach(function(m){ rows.push([m.hoTen||'', m.username||'', m.userId||'', m.ngay||'']); });
-  var csv=rows.map(function(r){return r.map(function(c){var s=String(c==null?'':c);return '"'+s.replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
-  csv='\ufeff'+csv;
-  try{
-    var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='thanhvien_'+gname.replace(/[^a-zA-Z0-9]/g,'_')+'.csv';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(url);},1000);
-    toast('Đã tạo file CSV');
-  }catch(e){
-    try{ navigator.clipboard.writeText(csv); toast('Không tải được file — đã CHÉP dữ liệu, dán vào Excel/Sheets'); }
-    catch(e2){ toast('Thiết bị không hỗ trợ xuất file ở đây'); }
-  }
-});
-
+$('memGroup').addEventListener('change',loadMembers);
+$('memSearch').addEventListener('input',renderMembers);
 $('memWrap').addEventListener('click',function(ev){
   var b=ev.target;
   if(b.classList.contains('btnDelMem')){
-    if(!confirm('Xoá thành viên này?'))return;
-    api('deleteMember',{gid:b.getAttribute('data-gid'),uid:b.getAttribute('data-uid')}).then(function(){toast('Đã xoá');loadMembers();}).catch(function(e){toast('Lỗi: '+e.message);});
+    if(!confirm('Xoá thành viên này?')) return;
+    api('deleteMember',{gid:b.getAttribute('data-gid'),uid:b.getAttribute('data-uid')})
+      .then(function(){ toast('Đã xoá'); loadMembers(); }).catch(function(e){ toast('Lỗi: '+e.message); });
   }
 });
 $('addMemBtn').addEventListener('click',function(){
   var gid=$('memGroup').value;
-  if(!gid){toast('Chưa chọn nhóm');return;}
-  var uid=$('addUid').value.trim();
-  var un=$('addUname').value.trim().replace(/^@/,'');
-  var nm=$('addName').value.trim();
-  if(!uid&&!un){toast('Cần ít nhất User ID hoặc Username');return;}
+  if(!gid){ toast('Chưa chọn nhóm'); return; }
+  var uid=$('addUid').value.trim(), un=$('addUname').value.trim().replace(/^@/,''), nm=$('addName').value.trim();
+  if(!uid&&!un){ toast('Cần ít nhất User ID hoặc Username'); return; }
   api('addMember',{gid:gid,uid:uid,un:un,nm:nm}).then(function(r){
-    if(r===false){toast('Người này đã có trong nhóm');}
-    else{toast('Đã thêm');$('addUid').value='';$('addUname').value='';$('addName').value='';loadMembers();}
-  }).catch(function(e){toast('Lỗi: '+e.message);});
+    if(r===false) toast('Người này đã có trong nhóm');
+    else { toast('Đã thêm'); $('addUid').value=''; $('addUname').value=''; $('addName').value=''; loadMembers(); }
+  }).catch(function(e){ toast('Lỗi: '+e.message); });
 });
-
-$('grpWrap').addEventListener('click',function(ev){
-  var b=ev.target;
-  if(b.classList.contains('btnRename')){
-    var gid=b.getAttribute('data-id');
-    var inp=document.querySelector('.gname[data-id="'+gid+'"]');
-    api('renameGroup',{gid:gid,name:inp?inp.value:''}).then(function(){toast('Đã lưu tên');return refresh();});
-  }else if(b.classList.contains('btnDelGroup')){
-    if(!confirm('Xoá nhóm này?'))return;
-    api('deleteGroup',{gid:b.getAttribute('data-id')}).then(function(){toast('Đã xoá nhóm');return refresh();});
+$('memExport').addEventListener('click',function(){
+  if(!MEMBERS.length){ toast('Chưa có dữ liệu để xuất'); return; }
+  var gsel=$('memGroup'); var gname=(gsel.options[gsel.selectedIndex]?gsel.options[gsel.selectedIndex].text:'nhom');
+  var rows=[['HoTen','Username','UserID','NgayThamGia']];
+  MEMBERS.forEach(function(m){ rows.push([m.hoTen||'',m.username||'',m.userId||'',m.ngay||'']); });
+  var csv='\ufeff'+rows.map(function(r){ return r.map(function(c){ return '"'+String(c==null?'':c).replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
+  try{
+    var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a'); a.href=url; a.download='thanhvien_'+gname.replace(/[^a-zA-Z0-9]/g,'_')+'.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); },1000);
+    toast('Đã tạo file CSV');
+  }catch(e){
+    try{ navigator.clipboard.writeText(csv); toast('Không tải được file — đã chép dữ liệu, dán vào Excel'); }
+    catch(e2){ toast('Thiết bị không hỗ trợ xuất file'); }
   }
 });
-$('addGrpBtn').addEventListener('click',function(){
-  var gid=$('addGid').value.trim();
-  var nm=$('addGname').value.trim();
-  if(!gid){toast('Cần Group ID');return;}
-  api('addGroup',{gid:gid,name:nm}).then(function(){toast('Đã thêm nhóm');$('addGid').value='';$('addGname').value='';return refresh();});
-});
 
+/* ===== Thông báo (FIX #17) ===== */
+function bcLen(){ var n=encodeURIComponent($('bcContent').value||'').length; $('bcCount').textContent=$('bcContent').value.length+' ký tự'+(n>1200?' — ⚠️ quá dài, hãy dùng /thongbao trong Telegram':''); }
+$('bcContent').addEventListener('input',bcLen);
 $('bcSend').addEventListener('click',function(){
   var content=$('bcContent').value.trim();
-  if(!content){toast('Chưa nhập nội dung');return;}
+  if(!content){ toast('Chưa nhập nội dung'); return; }
+  if(encodeURIComponent(content).length>1200){ toast('Nội dung dài quá giới hạn gửi qua Mini App. Hãy gửi bằng lệnh /thongbao trong Telegram.'); return; }
   var targets=[];
-  if($('bcAll').checked){targets=STATE.groups.map(function(g){return g.id;});}
-  else{document.querySelectorAll('.bcg:checked').forEach(function(c){targets.push(c.value);});}
-  if(!targets.length){toast('Chưa chọn nhóm');return;}
-  if(!confirm('Gửi tới '+targets.length+' nhóm?'))return;
-  var btn=this;btn.disabled=true;btn.textContent='Đang gửi...';
+  if($('bcAll').checked) targets=STATE.groups.map(function(g){ return g.id; });
+  else document.querySelectorAll('.bcg:checked').forEach(function(c){ targets.push(c.value); });
+  if(!targets.length){ toast('Chưa chọn nhóm'); return; }
+  if(!confirm('Gửi tới '+targets.length+' nhóm?')) return;
+  var btn=this; btn.disabled=true; btn.textContent='Đang gửi...';
   api('broadcast',{targets:targets,content:content}).then(function(r){
-    toast('Đã gửi tới '+r.ok+'/'+r.total+' nhóm');$('bcContent').value='';$('bcAll').checked=false;document.querySelectorAll('.bcg:checked').forEach(function(c){c.checked=false;});
-  }).catch(function(e){toast('Lỗi: '+e.message);}).then(function(){btn.disabled=false;btn.textContent='📢 Gửi thông báo';});
+    toast('Đã gửi tới '+r.ok+'/'+r.total+' nhóm');
+    $('bcContent').value=''; bcLen(); $('bcAll').checked=false;
+    document.querySelectorAll('.bcg:checked').forEach(function(c){ c.checked=false; });
+  }).catch(function(e){ toast('Lỗi: '+e.message); })
+    .then(function(){ btn.disabled=false; btn.textContent='📣 Gửi thông báo'; });
 });
 
+/* ===== Nhật ký ===== */
 function copyText(t){
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){toast('Đã copy mã lỗi');},function(){fallbackCopy(t);});}
-  else{fallbackCopy(t);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(function(){ toast('Đã copy'); },function(){ fallbackCopy(t); }); }
+  else fallbackCopy(t);
 }
-function fallbackCopy(t){var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');toast('Đã copy mã lỗi');}catch(e){toast('Không copy được');}document.body.removeChild(ta);}
+function fallbackCopy(t){ var ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('Đã copy'); }catch(e){ toast('Không copy được'); } document.body.removeChild(ta); }
 function loadErrors(){
   $('errWrap').innerHTML='<p class="muted">Đang tải...</p>';
   api('getErrors').then(function(rows){
-    if(!rows.length){ $('errWrap').innerHTML='<p class="muted">Không có lỗi nào. 🎉</p>'; return; }
+    if(!rows||!rows.length){ $('errWrap').innerHTML='<p class="muted">Không có lỗi nào. 🎉</p>'; return; }
     var h='<table><tr><th>Thời gian</th><th>Mã</th><th>Hàm</th><th>Chi tiết</th><th></th></tr>';
-    rows.forEach(function(r){var full=r[0]+' | '+r[1]+' | '+r[2]+' | '+r[3];h+='<tr><td class="muted">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td class="errDetail">'+esc(r[3])+'</td><td><button class="sec btnCopyErr" data-copy="'+esc(full)+'" style="margin-top:0;padding:6px 8px;white-space:nowrap">📋 Copy</button></td></tr>';});
+    rows.forEach(function(r){
+      var full=r[0]+' | '+r[1]+' | '+r[2]+' | '+r[3];
+      h+='<tr><td class="muted">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td class="errDetail">'+esc(r[3])+'</td><td><button class="sec btnCopyErr" data-copy="'+esc(full)+'" style="margin-top:0;padding:6px 8px;white-space:nowrap">📋 Copy</button></td></tr>';
+    });
     $('errWrap').innerHTML=h+'</table>';
-    Array.prototype.forEach.call(document.querySelectorAll('.btnCopyErr'),function(b){b.addEventListener('click',function(){copyText(b.getAttribute('data-copy'));});});
+    Array.prototype.forEach.call(document.querySelectorAll('.btnCopyErr'),function(b){ b.addEventListener('click',function(){ copyText(b.getAttribute('data-copy')); }); });
   }).catch(function(e){ $('errWrap').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
-$('errRefresh').addEventListener('click', loadErrors);
-
+$('errRefresh').addEventListener('click',loadErrors);
 function loadActivity(){
   $('actWrap').innerHTML='<p class="muted">Đang tải...</p>';
   api('getLog').then(function(rows){
-    if(!rows.length){ $('actWrap').innerHTML='<p class="muted">Chưa có hoạt động nào.</p>'; return; }
-    var h='<table><tr><th>Thời gian</th><th>Hành động</th><th>Chi tiết (nhóm)</th><th>Nội dung</th></tr>';
-    rows.forEach(function(r){h+='<tr><td class="muted">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3]||'')+'</td></tr>';});
+    if(!rows||!rows.length){ $('actWrap').innerHTML='<p class="muted">Chưa có hoạt động nào.</p>'; return; }
+    var h='<table><tr><th>Thời gian</th><th>Hành động</th><th>Chi tiết</th><th>Nội dung</th></tr>';
+    rows.forEach(function(r){ h+='<tr><td class="muted">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3]||'')+'</td></tr>'; });
     $('actWrap').innerHTML=h+'</table>';
   }).catch(function(e){ $('actWrap').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
-$('actRefresh').addEventListener('click', loadActivity);
+$('actRefresh').addEventListener('click',loadActivity);
 
-function fillConfig(){
-  var c=STATE.config;
-  $('cfgProvider').value=c.TRANSLATE_PROVIDER||'google_free';
-  $('cfgApiKey').value=c.TRANSLATE_API_KEY||'';
-  if($('cfgOrKey')) $('cfgOrKey').value=c.OPENROUTER_API_KEY||'';
-  if($('cfgOrModels')) $('cfgOrModels').value=c.OPENROUTER_MODELS||'';
-  if($('cfgGroqModels')) $('cfgGroqModels').value=c.GROQ_MODEL||'';
-  if($('cfgAiLimit')) $('cfgAiLimit').value=c.AI_DAILY_LIMIT||'';
-  $('cfgSecret').value=c.SECRET_CMD||'';
-  $('cfgCdAll').value=c.COOLDOWN_ALL||'';
-  $('cfgCdDich').value=c.COOLDOWN_DICH||'';
-  $('cfgDaily').value=c.PRIVATE_DAILY_LIMIT||'';
-  $('cfgCopyMode').value=(c.COPY_MODE||'tap');
-  $('cfgAdminId').value=c.ADMIN_ID||'';
-}
-$('cfgSave').addEventListener('click',function(){
-  var obj={TRANSLATE_PROVIDER:$('cfgProvider').value,TRANSLATE_API_KEY:$('cfgApiKey').value.trim(),SECRET_CMD:$('cfgSecret').value.trim(),COOLDOWN_ALL:$('cfgCdAll').value,COOLDOWN_DICH:$('cfgCdDich').value,ADMIN_ID:$('cfgAdminId').value.trim(),PRIVATE_DAILY_LIMIT:$('cfgDaily').value,COPY_MODE:$('cfgCopyMode').value};
-  if($('cfgOrKey') && $('cfgOrKey').value.trim()) obj.OPENROUTER_API_KEY=$('cfgOrKey').value.trim();
-  if($('cfgOrModels')) obj.OPENROUTER_MODELS=$('cfgOrModels').value.trim();
-  if($('cfgGroqModels')) obj.GROQ_MODEL=$('cfgGroqModels').value.trim();
-  if($('cfgAiLimit') && $('cfgAiLimit').value) obj.AI_DAILY_LIMIT=$('cfgAiLimit').value;
-  var tok=$('cfgToken').value.trim();
-  if(tok)obj.BOT_TOKEN=tok;
-  api('setConfig',{payload:obj}).then(function(){toast('Đã lưu cấu hình');$('cfgToken').value='';return refresh();});
-});
-$('apiCheck').addEventListener('click',function(){
-  var box=$('apiCheckBox');box.textContent='Đang kiểm tra...';
-  api('checkTranslate').then(function(r){
-    box.innerHTML=r.ok?('<span class="pill ok">OK</span> Provider: <b>'+esc(r.provider)+'</b> — "hello" → "'+esc(r.sample)+'"'):('<span class="pill err">Lỗi</span> '+esc(r.message));
-  }).catch(function(e){box.innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>';});
-});
-
-/* ===== Nạp dữ liệu ===== */
-function puStatusLabel(s){
-  return s==='approved'?'✅ Đã duyệt':s==='rejected'?'❌ Từ chối':s==='blocked'?'⛔ Bị chặn':'⏳ Chờ duyệt';
-}
+/* ===== User riêng ===== */
+function puStatusLabel(s){ return s==='approved'?'✅ Đã duyệt':s==='rejected'?'❌ Từ chối':s==='blocked'?'⛔ Bị chặn':'⏳ Chờ duyệt'; }
 function loadPrivateUsers(){
-  var w=document.getElementById('puWrap');
-  if(!w) return;
+  var w=$('puWrap'); if(!w) return;
   w.innerHTML='<p class="muted">Đang tải...</p>';
   api('privateUsers').then(function(list){
-    var pend=(list||[]).filter(function(u){return u.tinhTrang==='pending';}).length;
+    var pend=(list||[]).filter(function(u){ return u.tinhTrang==='pending'; }).length;
     var tab=document.querySelector('.tab[data-p="pusers"]');
     if(tab) tab.textContent='🙋 User riêng'+(pend?(' ('+pend+')'):'');
     if(!list||!list.length){ w.innerHTML='<p class="muted">Chưa có người dùng riêng nào.</p>'; return; }
-    var h='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'+
-      '<tr style="text-align:left;border-bottom:1px solid #ccc"><th>Tên</th><th>Username</th><th>ID</th><th>Yêu cầu</th><th>Trạng thái</th><th>Lượt dịch hôm nay</th><th>Cấp thêm lượt</th><th>Hành động</th></tr>';
+    var h='<table><tr><th>Tên</th><th>Username</th><th>ID</th><th>Trạng thái</th><th>Lượt hôm nay</th><th>Cấp thêm</th><th></th></tr>';
     list.forEach(function(u){
       var b='';
-      if(u.tinhTrang!=='approved') b+='<button class="sec" title="Duyệt" style="margin:2px;padding:5px 8px" onclick="puSet(\''+u.userId+'\',\'approved\')">✅</button>';
-      if(u.tinhTrang!=='rejected') b+='<button class="sec" title="Từ chối" style="margin:2px;padding:5px 8px" onclick="puSet(\''+u.userId+'\',\'rejected\')">❌</button>';
-      if(u.tinhTrang!=='blocked') b+='<button class="sec" title="Chặn" style="margin:2px;padding:5px 8px" onclick="puSet(\''+u.userId+'\',\'blocked\')">⛔</button>';
-      if(u.tinhTrang!=='pending') b+='<button class="sec" title="Đặt lại chờ duyệt / bỏ chặn" style="margin:2px;padding:5px 8px" onclick="puSet(\''+u.userId+'\',\'pending\')">🔄</button>';
+      if(u.tinhTrang!=='approved') b+='<button class="sec puBtn" data-uid="'+esc(u.userId)+'" data-st="approved" style="margin:2px;padding:5px 8px">✅</button>';
+      if(u.tinhTrang!=='rejected') b+='<button class="sec puBtn" data-uid="'+esc(u.userId)+'" data-st="rejected" style="margin:2px;padding:5px 8px">❌</button>';
+      if(u.tinhTrang!=='blocked') b+='<button class="sec puBtn" data-uid="'+esc(u.userId)+'" data-st="blocked" style="margin:2px;padding:5px 8px">⛔</button>';
+      if(u.tinhTrang!=='pending') b+='<button class="sec puBtn" data-uid="'+esc(u.userId)+'" data-st="pending" style="margin:2px;padding:5px 8px">🔄</button>';
       var used=(u.usedToday!=null?u.usedToday:(u.soLanDich||0));
       var lim=(u.effLimit!=null?u.effLimit:'?');
-      var quota='<b>'+used+'/'+lim+'</b>'+(u.bonusToday?(' <span class="muted">(bonus '+(u.bonusToday>0?'+':'')+u.bonusToday+')</span>'):'');
       var give=(u.tinhTrang==='approved')
-        ? ('<input type="number" id="qd_'+u.userId+'" placeholder="vd: 5 / -5" style="width:80px;padding:5px"> <button class="sec" title="Cộng/trừ lượt hôm nay" style="margin:2px;padding:5px 8px" onclick="puAdjust(\''+u.userId+'\')">＋ Cấp</button>')
+        ? ('<input type="number" class="puQd" data-uid="'+esc(u.userId)+'" placeholder="vd: 5" style="width:80px;padding:5px"> <button class="sec puGive" data-uid="'+esc(u.userId)+'" style="margin:2px;padding:5px 8px">＋ Cấp</button>')
         : '<span class="muted">—</span>';
-      h+='<tr style="border-bottom:1px solid #eee"><td>'+esc(u.hoTen)+'</td><td>'+(u.username?'@'+esc(u.username):'-')+'</td><td>'+esc(u.userId)+'</td><td>'+esc(u.ngayThamGia)+'</td><td>'+puStatusLabel(u.tinhTrang)+'</td><td style="white-space:nowrap">'+quota+'</td><td style="white-space:nowrap">'+give+'</td><td style="white-space:nowrap">'+b+'</td></tr>';
+      h+='<tr><td>'+esc(u.hoTen)+'</td><td>'+(u.username?'@'+esc(u.username):'-')+'</td><td><code>'+esc(u.userId)+'</code></td><td>'+puStatusLabel(u.tinhTrang)+'</td><td style="white-space:nowrap"><b>'+esc(used)+'/'+esc(lim)+'</b></td><td style="white-space:nowrap">'+give+'</td><td style="white-space:nowrap">'+b+'</td></tr>';
     });
-    h+='</table></div>';
-    w.innerHTML=h;
-  }).catch(function(e){ w.innerHTML='<p class="muted">Lỗi: '+esc(e.message)+'</p>'; });
+    w.innerHTML=h+'</table>';
+  }).catch(function(e){ w.innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
+$('puRefresh').addEventListener('click',loadPrivateUsers);
+$('puWrap').addEventListener('click',function(ev){
+  var b=ev.target;
+  if(b.classList.contains('puBtn')){
+    api('setPrivate',{uid:b.getAttribute('data-uid'),status:b.getAttribute('data-st')})
+      .then(function(){ toast('Đã cập nhật'); loadPrivateUsers(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+  }else if(b.classList.contains('puGive')){
+    var uid=b.getAttribute('data-uid');
+    var el=document.querySelector('.puQd[data-uid="'+uid+'"]');
+    var d=el?parseInt(el.value,10):0;
+    if(!d){ toast('Nhập số lượt cần cộng (số âm để trừ)'); return; }
+    api('adjustQuota',{uid:uid,delta:d}).then(function(r){ toast('Đã cập nhật — còn '+r.remaining+'/'+r.effLimit); loadPrivateUsers(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+  }
+});
+
+/* ===== Trợ lý AI ===== */
 function loadAiGroups(){
-  var w=document.getElementById('aiWrap');
-  if(!w) return;
+  var w=$('aiWrap'); if(!w) return;
   w.innerHTML='<p class="muted">Đang tải...</p>';
   api('aiGroups').then(function(d){
-    var info=document.getElementById('aiInfo');
-    if(info){
-      info.innerHTML=(d.hasKey?'<span class="pill">✅ Đã có OPENROUTER_API_KEY</span>':'<span class="pill err">❌ Chưa có OPENROUTER_API_KEY</span>')+
-        ' — Giới hạn mặc định: <b>'+esc(d.defaultLimit)+'</b> lượt/ngày<br>Thứ tự model sẽ thử: '+esc(d.models||'(chưa đặt)');
-    }
+    var info=$('aiInfo');
+    if(info) info.innerHTML=(d.hasKey?'<span class="pill ok">Đã có key AI</span>':'<span class="pill err">Chưa có key AI</span>')+' — Mặc định: <b>'+esc(d.defaultLimit)+'</b> lượt/ngày<br>Model sẽ thử: '+esc(d.models||'(chưa đặt)');
     var list=d.groups||[];
     if(!list.length){ w.innerHTML='<p class="muted">Chưa có nhóm nào.</p>'; return; }
-    var h='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'+
-      '<tr style="text-align:left;border-bottom:1px solid #ccc"><th>Nhóm</th><th>Group ID</th><th>Cho dùng /ai</th><th>Đã dùng hôm nay</th><th>Giới hạn/ngày</th></tr>';
+    var h='<table><tr><th>Nhóm</th><th>Group ID</th><th>Cho dùng /ai</th><th>Đã dùng</th><th>Giới hạn/ngày</th></tr>';
     list.forEach(function(g){
-      var btn='<button class="sec" style="margin:2px;padding:5px 10px" onclick="aiToggle(\''+g.id+'\','+(g.on?0:1)+')">'+(g.on?'✅ Đang bật':'⛔ Đang tắt')+'</button>';
-      var lim='<input type="number" id="ail_'+g.id+'" value="'+g.limit+'" style="width:70px;padding:5px"> <button class="sec" style="margin:2px;padding:5px 8px" onclick="aiSetLimit(\''+g.id+'\')">💾</button>';
-      h+='<tr style="border-bottom:1px solid #eee"><td>'+esc(g.name||'(chưa đặt tên)')+'</td><td>'+esc(g.id)+'</td><td style="white-space:nowrap">'+btn+'</td><td><b>'+g.used+'</b>/'+g.limit+'</td><td style="white-space:nowrap">'+lim+'</td></tr>';
+      h+='<tr><td>'+esc(g.name||'(chưa đặt tên)')+'</td><td><code>'+esc(g.id)+'</code></td>'+
+        '<td style="white-space:nowrap"><button class="sec aiTg" data-id="'+esc(g.id)+'" data-on="'+(g.on?0:1)+'" style="margin:2px;padding:5px 10px">'+(g.on?'✅ Đang bật':'⛔ Đang tắt')+'</button></td>'+
+        '<td><b>'+esc(g.used)+'</b>/'+esc(g.limit)+'</td>'+
+        '<td style="white-space:nowrap"><input type="number" class="aiLim" data-id="'+esc(g.id)+'" value="'+esc(g.limit)+'" style="width:70px;padding:5px"> <button class="sec aiSave" data-id="'+esc(g.id)+'" style="margin:2px;padding:5px 8px">💾</button></td></tr>';
     });
-    h+='</table></div>';
-    w.innerHTML=h;
-  }).catch(function(e){ w.innerHTML='<p class="muted">Lỗi: '+esc(e.message)+'</p>'; });
+    w.innerHTML=h+'</table>';
+  }).catch(function(e){ w.innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
-window.aiToggle=function(gid,on){
-  api('setAiGroup',{gid:gid,on:on}).then(function(){ toast(on?'🟢 Đã bật AI cho nhóm':'🔴 Đã tắt AI cho nhóm'); loadAiGroups(); }).catch(function(e){ toast('Lỗi: '+e.message); });
-};
-window.aiSetLimit=function(gid){
-  var el=document.getElementById('ail_'+gid);
-  var v=el?parseInt(el.value,10):0;
-  if(!v||v<1){ toast('Nhập giới hạn lượt/ngày (số từ 1 trở lên)'); return; }
-  api('setAiGroup',{gid:gid,limit:v}).then(function(){ toast('✅ Đã đặt '+v+' lượt/ngày'); loadAiGroups(); }).catch(function(e){ toast('Lỗi: '+e.message); });
-};
-(function(){
-  var t=document.querySelector('.tab[data-p="ai"]');
-  if(t) t.addEventListener('click', function(){ setTimeout(loadAiGroups, 60); });
-})();
-window.puSet=function(uid,status){
-  api('setPrivate',{uid:uid,status:status}).then(function(){ toast('✅ Đã cập nhật'); loadPrivateUsers(); }).catch(function(e){ toast('Lỗi: '+e.message); });
-};
-window.puAdjust=function(uid){
-  var el=document.getElementById('qd_'+uid);
-  var d=el?parseInt(el.value,10):0;
-  if(!d){ toast('Nhập số lượt cần cộng (số âm để trừ)'); return; }
-  api('adjustQuota',{uid:uid,delta:d}).then(function(r){ toast('✅ Đã cập nhật — còn '+r.remaining+'/'+r.effLimit); loadPrivateUsers(); }).catch(function(e){ toast('Lỗi: '+e.message); });
-};
+$('aiRefresh').addEventListener('click',loadAiGroups);
+$('aiWrap').addEventListener('click',function(ev){
+  var b=ev.target;
+  if(b.classList.contains('aiTg')){
+    var on=b.getAttribute('data-on');
+    api('setAiGroup',{gid:b.getAttribute('data-id'),on:on}).then(function(){ toast(on==='1'?'Đã bật AI cho nhóm':'Đã tắt AI cho nhóm'); loadAiGroups(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+  }else if(b.classList.contains('aiSave')){
+    var gid=b.getAttribute('data-id');
+    var el=document.querySelector('.aiLim[data-id="'+gid+'"]');
+    var v=el?parseInt(el.value,10):0;
+    if(!v||v<1){ toast('Nhập số lượt/ngày từ 1 trở lên'); return; }
+    api('setAiGroup',{gid:gid,limit:v}).then(function(){ toast('Đã đặt '+v+' lượt/ngày'); loadAiGroups(); }).catch(function(e){ toast('Lỗi: '+e.message); });
+  }
+});
+
+/* ===== TAB KIỂM TRA API (chỉ đọc) ===== */
+$('apiRun').addEventListener('click',function(){
+  var w=$('apiWrap'); var btn=this;
+  btn.disabled=true; w.innerHTML='<p class="muted">Đang gọi thử từng nguồn, mất 10-20 giây...</p>';
+  api('testApi',{},60000).then(function(d){
+    var rows=(d&&d.rows)||d||[];
+    var h='';
+    if(d&&d.textLadder) h+='<p class="muted">📝 Thang dịch chữ: '+esc(d.textLadder)+'<br>🖼 Thang dịch ảnh: '+esc(d.imageLadder||'')+'</p>';
+    h+='<table><tr><th></th><th>Nguồn</th><th>Chữ</th><th>Ảnh</th><th>Chi tiết</th></tr>';
+    rows.forEach(function(r){
+      var icon=r.ok?'✅':(r.optional?'⬜':'❌');
+      h+='<tr><td>'+icon+'</td><td><b>'+esc(r.name||r.provider)+'</b></td><td>'+(r.textRank?('#'+r.textRank):'—')+'</td><td>'+(r.imageRank?('#'+r.imageRank):'—')+'</td><td class="errDetail">'+esc(r.ok?(r.detail||'OK'):(r.err||''))+'</td></tr>';
+    });
+    var good=rows.filter(function(r){ return r.ok; }).length;
+    w.innerHTML=h+'</table><p class="muted">→ '+good+'/'+rows.length+' nguồn sẵn sàng. Dấu ⬜ là nguồn tùy chọn chưa có key, không phải lỗi.</p>';
+  }).catch(function(e){
+    if(apiMissing_(e)) w.innerHTML='<span class="pill warn">Bản Code.gs đang chạy chưa mở api "testApi"</span><p class="muted">Trong lúc chờ, gõ <code>/testapi</code> khi nhắn riêng với bot — kết quả giống hệt bảng này.</p>';
+    else w.innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>';
+  }).then(function(){ btn.disabled=false; });
+});
+
+/* ===== TAB CHẾ ĐỘ CHẠY ===== */
+function paintMode(d){
+  var t=d&&d.mode==='webhook'?'⚡ Đang chạy WEBHOOK — trả lời tức thì'
+       :d&&d.mode==='polling'?'🕐 Đang chạy POLLING — hẹn giờ 1 phút/lần'
+       :'🔴 Bot đang tắt (không webhook, không hẹn giờ)';
+  $('modeNow').textContent=t;
+  $('modeMsg').innerHTML=(d&&d.hookUrl?('Link webhook: <code>'+esc(d.hookUrl)+'</code><br>'):'')+(d&&d.pending?('Đang có '+esc(d.pending)+' tin chờ xử lý<br>'):'')+'Ô <code>RUN_MODE</code> trong sheet Config: <b>'+esc((d&&d.runMode)||'(chưa có)')+'</b>';
+}
+function loadMode(){
+  $('modeNow').textContent='Đang kiểm tra...';
+  api('mode',{},45000).then(paintMode).catch(function(e){
+    if(apiMissing_(e)){ $('modeNow').textContent='—'; $('modeMsg').innerHTML='<span class="pill warn">Bản Code.gs đang chạy chưa mở api "mode"</span><br>Gõ <code>/mode</code> khi nhắn riêng với bot — bot hiện 2 nút Webhook / Polling để đổi.'; }
+    else { $('modeNow').textContent='—'; $('modeMsg').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; }
+  });
+}
+function setMode(m){
+  $('modeMsg').textContent='Đang chuyển...';
+  api('mode',{set:m},60000).then(function(d){ toast(m==='webhook'?'Đã chuyển sang Webhook':'Đã về Polling'); paintMode(d); })
+    .catch(function(e){ $('modeMsg').innerHTML='<span class="pill err">'+esc(e.message)+'</span><br><span class="muted">Cách khác: gõ <code>/mode</code> trong Telegram rồi bấm nút.</span>'; });
+}
+$('modeHook').addEventListener('click',function(){ setMode('webhook'); });
+$('modePoll').addEventListener('click',function(){ setMode('polling'); });
+$('modeRefresh').addEventListener('click',loadMode);
+
+/* ===== CẤU HÌNH (FIX #01 + #02) =====
+ * Danh sách ô. secret:true = ô khóa bí mật, để trống thì KHÔNG gửi đi. */
+var PROVS='gemini, openrouter, groq, google_v2, google_free, mymemory (chữ) · gemini, openrouter, groq, ocr (ảnh)';
+var CFG=[
+  {k:'TEXT_LADDER',   t:'text', label:'Thang ưu tiên dịch CHỮ (tốt nhất → dự phòng)', hint:'Cách nhau dấu phẩy. Đủ 7 nguồn: '+PROVS},
+  {k:'IMAGE_LADDER',  t:'text', label:'Thang ưu tiên dịch ẢNH', hint:'Ví dụ: gemini,openrouter,groq,ocr'},
+  {k:'RETRY_TOP_MINUTES', t:'number', label:'Bao nhiêu phút thì thử leo lại nguồn tốt nhất', hint:'Mặc định 30'},
+  {k:'GEMINI_MODEL',  t:'text', label:'Model Gemini', hint:'Nên để gemini-flash-latest hoặc gemini-2.5-flash'},
+  {k:'GEMINI_API_KEY',t:'text', label:'Key Gemini (AI Studio)', hint:'Nhiều key cách nhau dấu phẩy. Để trống = giữ nguyên', secret:true},
+  {k:'OPENROUTER_MODELS', t:'text', label:'Model OpenRouter (thử từ trên xuống)'},
+  {k:'OPENROUTER_API_KEY',t:'text', label:'Key OpenRouter', hint:'Để trống = giữ nguyên', secret:true},
+  {k:'GROQ_MODEL',    t:'text', label:'Model Groq', hint:'Model dịch ảnh phải thuộc dòng llama-4'},
+  {k:'GROQ_API_KEY',  t:'text', label:'Key Groq', hint:'Để trống = giữ nguyên', secret:true},
+  {k:'TRANSLATE_API_KEY', t:'text', label:'Key Google Cloud Translation (không bắt buộc)', secret:true},
+  {k:'OCRSPACE_API_KEY',  t:'text', label:'Key OCR.space (dự phòng dịch ảnh)', secret:true},
+  {k:'MYMEMORY_EMAIL',t:'text', label:'Email MyMemory', hint:'Điền gmail nào cũng được — chỉ để nâng hạn mức miễn phí, không cần đăng nhập'},
+  {k:'COPY_MODE',     t:'select', label:'Kiểu copy bản dịch', opts:[['tap','Chạm để copy cả khối'],['select','Bôi chọn thủ công']]},
+  {k:'COOLDOWN_DICH', t:'number', label:'Chờ giữa 2 lần /dich (giây)'},
+  {k:'COOLDOWN_DICH_IMG', t:'number', label:'Chờ giữa 2 lần dịch ảnh (giây)'},
+  {k:'COOLDOWN_AI',   t:'number', label:'Chờ giữa 2 lần /ai (giây)'},
+  {k:'COOLDOWN_ALL',  t:'number', label:'Chờ giữa 2 lần /all (giây)'},
+  {k:'PRIVATE_DAILY_LIMIT', t:'number', label:'Giới hạn dịch/ngày cho user nhắn riêng'},
+  {k:'AI_DAILY_LIMIT',t:'number', label:'Giới hạn /ai mỗi ngày cho 1 nhóm'},
+  {k:'AI_MAX_TURNS',  t:'number', label:'Số lượt hỏi-đáp AI ghi nhớ'},
+  {k:'AI_SEARCH',     t:'select', label:'Cho /ai tự tìm web', opts:[['on','Bật'],['off','Tắt']]},
+  {k:'AWAKE_MINUTES', t:'number', label:'Số phút bot giữ thức sau tin cuối (chế độ Polling)'},
+  {k:'SECRET_CMD',    t:'text', label:'Lệnh bí mật gửi thông báo'},
+  {k:'BOT_ENV',       t:'select', label:'Bot này là bản nào', opts:[['beta','beta (thử nghiệm)'],['main','main (bản chính)']]},
+  {k:'ADMIN_ID',      t:'text', label:'Admin ID'},
+  {k:'DASHBOARD_URL', t:'text', label:'Link Mini App (GitHub Pages)'},
+  {k:'BOT_TOKEN',     t:'text', label:'Bot Token', hint:'Để trống = không đổi. Chỉ điền khi muốn chuyển token', secret:true}
+];
+var ORIG={};
+function buildConfig(){
+  var c=STATE.config||{}, h='';
+  CFG.forEach(function(f){
+    var val=(c[f.k]==null?'':String(c[f.k]));
+    ORIG[f.k]=f.secret?'':val;
+    h+='<label for="cf_'+f.k+'">'+esc(f.label)+' <span class="muted">('+esc(f.k)+')</span></label>';
+    if(f.t==='select'){
+      h+='<select id="cf_'+f.k+'" data-k="'+f.k+'">';
+      f.opts.forEach(function(o){ h+='<option value="'+esc(o[0])+'"'+(val===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'; });
+      h+='</select>';
+    }else{
+      var shown=f.secret?'':val;
+      var ph=f.secret?(val?'Đã có (ẩn) — để trống nếu không đổi':'(chưa có)'):'';
+      h+='<input id="cf_'+f.k+'" data-k="'+f.k+'" type="'+(f.t==='number'?'number':'text')+'" value="'+esc(shown)+'" placeholder="'+esc(ph)+'">';
+    }
+    if(f.hint) h+='<div class="muted">'+esc(f.hint)+'</div>';
+  });
+  $('cfgWrap').innerHTML=h;
+  CFG.forEach(function(f){
+    var el=$('cf_'+f.k); if(!el) return;
+    el.addEventListener('input',function(){ el.classList.add('dirty'); });
+    el.addEventListener('change',function(){ el.classList.add('dirty'); });
+  });
+  $('cfgMsg').textContent='';
+}
+$('cfgReset').addEventListener('click',function(){ buildConfig(); toast('Đã lấy lại giá trị đang lưu trong Sheet'); });
+$('cfgSave').addEventListener('click',function(){
+  var obj={}, n=0, names=[];
+  CFG.forEach(function(f){
+    var el=$('cf_'+f.k); if(!el) return;
+    if(!el.classList.contains('dirty')) return;          // FIX #01: không chạm thì không gửi
+    var v=String(el.value==null?'':el.value).trim();
+    if(f.secret && !v) return;                            // ô khóa để trống = giữ nguyên
+    obj[f.k]=v; n++; names.push(f.k);
+  });
+  if(!n){ toast('Chưa sửa ô nào cả'); return; }
+  if(!confirm('Lưu '+n+' ô: '+names.join(', ')+' ?')) return;
+  var btn=this; btn.disabled=true;
+  api('setConfig',{payload:obj}).then(function(){
+    $('cfgMsg').innerHTML='<span class="pill ok">Đã lưu '+n+' ô</span>';
+    toast('Đã lưu cấu hình');
+    return refresh();
+  }).catch(function(e){ $('cfgMsg').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; })
+    .then(function(){ btn.disabled=false; });
+});
+
+/* ===== Nạp dữ liệu ===== */
 function refresh(fromGate){
   if(!ADMIN_KEY){ showGate(''); return Promise.resolve(); }
   setStatus('','Đang tải dữ liệu...');
   return api('init').then(function(s){
-    STATE=s; showApp();
-    setStatus('live','Đang hoạt động • '+s.groups.length+' nhóm • Dịch: '+(s.config.TRANSLATE_PROVIDER||'google_free'));
-    renderGroups(); fillConfig(); loadMembers(); loadErrors(); loadActivity(); loadPrivateUsers();
+    STATE=s||{groups:[],config:{}};
+    STATE.groups=STATE.groups||[]; STATE.config=STATE.config||{};
+    showApp();
+    var ver=STATE.version||((STATE.config.CODE_VERSION||'')+(STATE.config.BOT_ENV?(' · '+STATE.config.BOT_ENV):''));
+    $('verBox').textContent=ver?('— bot: '+ver):'';
+    setStatus('live','Đang hoạt động • '+STATE.groups.length+' nhóm • '+(STATE.config.TEXT_LADDER||'thang mặc định'));
+    renderGroups(); buildConfig(); loadMembers(); loadErrors(); loadActivity(); loadPrivateUsers();
   }).catch(function(e){
-    if(String(e.message).indexOf('UNAUTHORIZED')>=0){ showGate('Mã không đúng, nhập lại'); }
+    if(String(e.message).indexOf('UNAUTHORIZED')>=0) showGate('Mã không đúng, nhập lại');
     else { setStatus('bad','Lỗi kết nối'); toast('Lỗi: '+e.message); if(fromGate) showGate('Không kết nối được: '+e.message); }
   });
 }
