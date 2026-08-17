@@ -7,7 +7,7 @@
 <title>TEIN AI BOT — Bảng điều khiển</title>
 <!--
   ============================================================
-   TEIN AI BOT — MINI APP v2.1.1  (16/08/2026)
+   TEIN AI BOT — MINI APP v2.1.2  (17/08/2026)
    Dán thay TOÀN BỘ file index.html cũ trên GitHub.
    v2.0  : #01 không ghi rỗng đè cấu hình · #02 đủ 7 nguồn
            #07 esc() đầy đủ · #17 chặn nội dung quá dài trước khi gửi
@@ -21,6 +21,13 @@
            trong thanh tab / trong bảng = trượt ngang, thanh cuộn ngang
            của bảng dày hơn và luôn nhìn thấy. Trên điện thoại vẫn vuốt
            tay như cũ (2 nút tự ẩn).
+   v2.1.2: 1) THÔNG BÁO CHO USER NHẮN RIÊNG — khung mới trong tab Thông báo,
+              tách hẳn khỏi nhóm, lọc Đã duyệt / Chưa duyệt / Tất cả,
+              tích chọn từng người (gọi api=broadcastUsers của Mã.gs v2.1.2,
+              gửi xong tự ghi vào Nhật ký).
+           2) SỬA LỖI HIỂN THỊ BẢNG — tiêu đề và dãy ID không còn bị xếp
+              dọc 1 chứ một dòng (bỏ overflow-wrap:anywhere áp cho mọi ô).
+           3) GIỜ KIỂU VIỆT NAM — mọi cột thời gian hiện dd/MM/yyyy HH:mm:ss.
   ============================================================
 -->
 <style>
@@ -73,7 +80,15 @@ th{color:var(--muted);}
 .tblWrap::-webkit-scrollbar-track{background:#0b1220;border-radius:8px;}
 .tblWrap::-webkit-scrollbar-thumb{background:#64748b;border-radius:8px;border:2px solid #0b1220;}
 .tblWrap::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
-th,td{word-break:break-word;overflow-wrap:anywhere;}
+/* v2.1.2 — SỬA LỖI "CHỮ XẾP DỌC 1 KÝ TỰ MỘT DÒNG"
+   Bản cũ đặt overflow-wrap:anywhere cho MỮI ô nên khi bảng bị bóp hếp,
+   tiêu đề "Tên / Username / ID" và dãy số ID bị cắt thành từng chứ một dòng.
+   Giờ: tiêu đề và các ô ngắn KHÔNG xuống dòng, chỉ ô Chi tiết / Nội dung mới bẻ chữ. */
+th{white-space:nowrap;word-break:normal;overflow-wrap:normal;}
+td{word-break:normal;overflow-wrap:break-word;}
+td code{white-space:nowrap;}
+.errDetail{word-break:break-word;overflow-wrap:anywhere;white-space:normal;}
+.tblWrap table{min-width:720px;table-layout:auto;}
 input,textarea,select,button{max-width:100%;}
 code{word-break:break-all;}
 @media (max-width:560px){
@@ -84,7 +99,7 @@ code{word-break:break-all;}
   table{font-size:12px;}
   th,td{padding:6px;}
   .errDetail{max-width:200px;}
-  .tblWrap table{min-width:480px;}
+  .tblWrap table{min-width:700px;}   /* v2.1.2: không bóp bảng nừa, để trượt ngang cho đỡ vỡ chữ */
 }
 .row{display:flex;gap:10px;flex-wrap:wrap;}
 .row>div{flex:1;min-width:150px;}
@@ -109,7 +124,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <body>
 <header>
 <h1>🤖 TEIN AI BOT</h1>
-<div class="sub">Bảng điều khiển — <b>Mini App v2.1.1</b> <span id="verBox" class="muted"></span></div>
+<div class="sub">Bảng điều khiển — <b>Mini App v2.1.2</b> <span id="verBox" class="muted"></span></div>
 <div class="status" id="statusLine"><span class="dot" id="statusDot"></span> <span id="statusText">Đang kết nối...</span></div>
 </header>
 
@@ -155,6 +170,24 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <div class="chk"><input type="checkbox" id="bcAll"><label for="bcAll" style="margin:0;color:var(--txt)">Tất cả các nhóm</label></div>
 <div id="bcGroups"></div>
 <button id="bcSend">📣 Gửi thông báo</button>
+</div>
+
+<!-- v2.1.2 — THÔNG BÁO CHO USER NHẮN RIÊNG (không liên quan gì tới nhóm) -->
+<div class="card">
+<h2>🙋 Gửi thông báo cho user nhắn riêng</h2>
+<p class="muted">Phần này <b>tách hẳn khỏi nhóm</b>: bot nhắn riêng từng người trong sheet <code>PrivateUsers</code>. Gửi xong tự ghi vào tab 📜 Nhật ký.</p>
+<label>Nội dung <span class="muted">(tối đa ~1200 ký tự — dài hơn thì dùng lệnh /tbuser trong Telegram)</span></label>
+<textarea id="ubContent" placeholder="Nội dung gửi riêng cho user..."></textarea>
+<div class="muted" id="ubCount">0 ký tự</div>
+<label>Chọn nhóm người nhận</label>
+<div class="modebox">
+<button class="sec ubFlt" data-f="approved">✅ Đã duyệt</button>
+<button class="sec ubFlt" data-f="pending">⏳ Chưa duyệt</button>
+<button class="sec ubFlt" data-f="all">👥 Tất cả user</button>
+</div>
+<div class="chk"><input type="checkbox" id="ubAll"><label for="ubAll" style="margin:0;color:var(--txt)">Chọn hết những người đang hiện</label></div>
+<div id="ubList"><p class="muted">Đang tải danh sách user...</p></div>
+<button id="ubSend">📣 Gửi cho user đã chọn</button>
 </div>
 </div>
 
@@ -270,6 +303,22 @@ function esc(s){
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function $(id){ return document.getElementById(id); }
+/* ===== v2.1.2 — GIỜ KIỂU VIỆT NAM =====
+ * Sheet ghi "2026-08-17 13:16:59", trên máy khác có thể thành
+ * "Aug 17 2026 13:16:59 GMT+0700 (Giờ Đông Dương)" — đọc rất khó hiểu.
+ * Hàm này đổi hết về dạng 17/08/2026 13:16:59. */
+function fmtVN_(v){
+  var s=String(v==null?'':v).trim();
+  if(!s) return '';
+  var m=s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if(m) return m[3]+'/'+m[2]+'/'+m[1]+' '+m[4]+':'+m[5]+(m[6]?(':'+m[6]):'');
+  if(/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s;
+  var d=new Date(s);
+  if(isNaN(d.getTime())) return s;
+  function p(n){ return (n<10?'0':'')+n; }
+  return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+
+         p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+}
 function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },2800); }
 function setStatus(kind,text){ var d=$('statusDot'); d.className='dot'+(kind==='live'?' live':kind==='bad'?' bad':''); $('statusText').textContent=text; }
 
@@ -451,7 +500,7 @@ function renderMembers(){
   if(!list.length){ $('memWrap').innerHTML='<p class="muted">Không tìm thấy thành viên khớp.</p>'; return; }
   var h='<p class="muted">'+list.length+'/'+MEMBERS.length+' thành viên</p><div class="tblWrap"><table><tr><th>Tên</th><th>Username</th><th>User ID</th><th>Ngày vào</th><th></th></tr>';
   list.forEach(function(m){
-    h+='<tr><td>'+esc(m.nm||'(chưa có tên)')+'</td><td>'+(m.un?('@'+esc(m.un)):'<span class="muted">(không có)</span>')+'</td><td><code>'+esc(m.uid)+'</code></td><td class="muted" style="white-space:nowrap">'+esc(m.joined||'')+'</td><td style="white-space:nowrap"><button class="danger btnDelMem" data-gid="'+esc(gid)+'" data-uid="'+esc(m.uid)+'">Xoá</button></td></tr>';
+    h+='<tr><td>'+esc(m.nm||'(chưa có tên)')+'</td><td>'+(m.un?('@'+esc(m.un)):'<span class="muted">(không có)</span>')+'</td><td><code>'+esc(m.uid)+'</code></td><td class="muted" style="white-space:nowrap">'+esc(fmtVN_(m.joined))+'</td><td style="white-space:nowrap"><button class="danger btnDelMem" data-gid="'+esc(gid)+'" data-uid="'+esc(m.uid)+'">Xoá</button></td></tr>';
   });
   $('memWrap').innerHTML=h+'</table></div>';
 }
@@ -523,6 +572,70 @@ $('bcSend').addEventListener('click',function(){
     .then(function(){ btn.disabled=false; btn.textContent='📣 Gửi thông báo'; });
 });
 
+/* ===== v2.1.2 — THÔNG BÁO CHO USER NHẮN RIÊNG =====
+ * Danh sách lấy từ chính dỳ liệu tab 🙋 User riêng (sheet PrivateUsers),
+ * nên trạng thái luôn khớp: bot — sheet — Mini App. */
+var PU_ALL=[], UB_FLT='approved';
+function ubFiltered(){
+  return (PU_ALL||[]).filter(function(u){
+    var st=String(u.status||'pending');
+    if(UB_FLT==='approved') return st==='approved';
+    if(UB_FLT==='pending')  return st!=='approved';
+    return true;
+  });
+}
+function ubRender(){
+  var w=$('ubList'); if(!w) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.ubFlt'),function(b){
+    b.style.background=(b.getAttribute('data-f')===UB_FLT)?'var(--accent)':'#475569';
+  });
+  var nA=0,nP=0;
+  (PU_ALL||[]).forEach(function(u){ if(String(u.status||'pending')==='approved') nA++; else nP++; });
+  var info='<p class="muted">✅ Đã duyệt: <b>'+nA+'</b> · ⏳ Chưa duyệt: <b>'+nP+'</b> · 👥 Tất cả: <b>'+(nA+nP)+'</b></p>';
+  var list=ubFiltered();
+  if(!list.length){ w.innerHTML=info+'<p class="muted">Không có ai trong nhóm này.</p>'; if($('ubAll')) $('ubAll').checked=false; return; }
+  var h=info;
+  list.forEach(function(u){
+    var id='ubu_'+u.uid;
+    h+='<div class="chk"><input type="checkbox" class="ubu" value="'+esc(u.uid)+'" id="'+id+'">'+
+       '<label for="'+id+'" style="margin:0;color:var(--txt)">'+esc(u.nm||'(chưa có tên)')+
+       (u.un?(' <span class="muted">@'+esc(u.un)+'</span>'):'')+
+       ' <span class="muted">· '+puStatusLabel(String(u.status||'pending'))+' · ID '+esc(u.uid)+'</span></label></div>';
+  });
+  w.innerHTML=h;
+  if($('ubAll')) $('ubAll').checked=false;
+}
+Array.prototype.forEach.call(document.querySelectorAll('.ubFlt'),function(b){
+  b.addEventListener('click',function(){ UB_FLT=b.getAttribute('data-f'); ubRender(); });
+});
+if($('ubAll')) $('ubAll').addEventListener('change',function(){
+  var c=this.checked;
+  Array.prototype.forEach.call(document.querySelectorAll('.ubu'),function(x){ x.checked=c; });
+});
+function ubLen(){
+  var v=$('ubContent').value||'';
+  var n=encodeURIComponent(v).length;
+  $('ubCount').textContent=v.length+' ký tự'+(n>1200?' — ⚠️ quá dài, hãy dùng lệnh /tbuser trong Telegram':'');
+}
+if($('ubContent')) $('ubContent').addEventListener('input',ubLen);
+if($('ubSend')) $('ubSend').addEventListener('click',function(){
+  var content=$('ubContent').value.trim();
+  if(!content){ toast('Chưa nhập nội dung'); return; }
+  if(encodeURIComponent(content).length>1200){ toast('Nội dung dài quá giới hạn gửi qua Mini App. Hãy dùng lệnh /tbuser trong Telegram.'); return; }
+  var uids=[];
+  Array.prototype.forEach.call(document.querySelectorAll('.ubu'),function(c){ if(c.checked) uids.push(c.value); });
+  if(!uids.length){ toast('Chưa chọn user nào'); return; }
+  if(!confirm('Gửi thông báo riêng cho '+uids.length+' người?')) return;
+  var btn=this; btn.disabled=true; btn.textContent='Đang gửi...';
+  api('broadcastUsers',{uids:uids,content:content,filter:UB_FLT}).then(function(r){
+    toast('Đã gửi cho '+((r&&r.sent)||0)+' người'+((r&&r.failed)?(' · lỗi '+r.failed):''));
+    $('ubContent').value=''; ubLen(); ubRender(); loadActivity();
+  }).catch(function(e){
+    if(apiMissing_(e)) toast('Bản Mã.gs đang chạy chưa có của broadcastUsers — anh dán Mã.gs v2.1.2 trước nhé');
+    else toast('Lỗi: '+e.message);
+  }).then(function(){ btn.disabled=false; btn.textContent='📣 Gửi cho user đã chọn'; });
+});
+
 /* ===== Nhật ký ===== */
 function copyText(t){
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(function(){ toast('Đã copy'); },function(){ fallbackCopy(t); }); }
@@ -537,7 +650,7 @@ function loadErrors(){
     var h='<div class="tblWrap"><table><tr><th>Thời gian</th><th>Mã</th><th>Hàm</th><th>Chi tiết</th><th></th></tr>';
     rows.forEach(function(r){
       var full=(r.time||'')+' | '+(r.code||'')+' | '+(r.fn||'')+' | '+(r.detail||'');
-      h+='<tr><td class="muted" style="white-space:nowrap">'+esc(r.time)+'</td><td>'+esc(r.code)+'</td><td>'+esc(r.fn)+'</td><td class="errDetail">'+esc(r.detail)+'</td><td><button class="sec btnCopyErr" data-copy="'+esc(full)+'" style="margin-top:0;padding:6px 8px;white-space:nowrap">📋 Copy</button></td></tr>';
+      h+='<tr><td class="muted" style="white-space:nowrap">'+esc(fmtVN_(r.time))+'</td><td style="white-space:nowrap">'+esc(r.code)+'</td><td>'+esc(r.fn)+'</td><td class="errDetail">'+esc(r.detail)+'</td><td><button class="sec btnCopyErr" data-copy="'+esc(full)+'" style="margin-top:0;padding:6px 8px;white-space:nowrap">📋 Copy</button></td></tr>';
     });
     $('errWrap').innerHTML=h+'</table></div>';
     Array.prototype.forEach.call(document.querySelectorAll('.btnCopyErr'),function(b){ b.addEventListener('click',function(){ copyText(b.getAttribute('data-copy')); }); });
@@ -550,7 +663,7 @@ function loadActivity(){
     if(!rows||!rows.length){ $('actWrap').innerHTML='<p class="muted">Chưa có hoạt động nào.</p>'; return; }
     /* v2.1.0 — Code.gs trả về: time / action / detail / content */
     var h='<div class="tblWrap"><table><tr><th>Thời gian</th><th>Hành động</th><th>Chi tiết</th><th>Nội dung</th></tr>';
-    rows.forEach(function(r){ h+='<tr><td class="muted" style="white-space:nowrap">'+esc(r.time)+'</td><td>'+esc(r.action)+'</td><td class="errDetail">'+esc(r.detail)+'</td><td class="errDetail">'+esc(r.content||'')+'</td></tr>'; });
+    rows.forEach(function(r){ h+='<tr><td class="muted" style="white-space:nowrap">'+esc(fmtVN_(r.time))+'</td><td style="white-space:nowrap">'+esc(r.action)+'</td><td class="errDetail">'+esc(r.detail)+'</td><td class="errDetail">'+esc(r.content||'')+'</td></tr>'; });
     $('actWrap').innerHTML=h+'</table></div>';
   }).catch(function(e){ $('actWrap').innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>'; });
 }
@@ -563,6 +676,8 @@ function loadPrivateUsers(){
   w.innerHTML='<p class="muted">Đang tải...</p>';
   api('privateUsers').then(function(list){
     /* v2.1.0 — Code.gs trả về: uid / un / nm / joined / status / used / bonus / limit */
+    PU_ALL=list||[];                       // v2.1.2: dùng chung cho khung gửi thông báo user riêng
+    try{ ubRender(); }catch(e){}
     var pend=(list||[]).filter(function(u){ return u.status==='pending'; }).length;
     var tab=document.querySelector('.tab[data-p="pusers"]');
     if(tab) tab.textContent='🙋 User riêng'+(pend?(' ('+pend+')'):'');
