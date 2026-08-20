@@ -4,11 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<title>TEIN AI BOT — Bảng điều khiển</title>
+<title>Bảng điều khiển bot</title>
 <!--
   ============================================================
-   TEIN AI BOT — MINI APP v2.1.2  (17/08/2026)
+   MINI APP QUẢN TRỊ BOT — v2.1.4  (20/08/2026)
    Dán thay TOÀN BỘ file index.html cũ trên GitHub.
+   v2.1.4: 1) TÊN BOT không còn viết cứng trong file. Tiêu đề lấy từ ô BOT_NAME
+              của sheet Config (bot trả về qua api=init) -> cùng 1 file dùng cho
+              bot beta và bot chính, mỗi bên tự hiện tên của nó.
+           2) HUY HIỆU BETA / CHÍNH to ở đầu trang để không bao giờ bấm nhầm
+              nút "gửi thông báo" của bot chính khi đang định test bot beta.
+           3) MÃ QUẢN TRỊ LƯU RIÊNG THEO TẮNG LINK /exec (trước đây dùng chung
+              một ô nhớ, mở 2 bot trên cùng 1 trình duyệt thì mã của bot mới
+              đè mất mã bot cũ, phải dán lại). Lưu ý: đây chỉ là chuyện của
+              TRÌNH DUYỆT; hai dự án Apps Script / Sheet / GitHub của anh vẫn
+              hoàn toàn độc lập và không hề ảnh hưởng lẫn nhau.
    v2.0  : #01 không ghi rỗng đè cấu hình · #02 đủ 7 nguồn
            #07 esc() đầy đủ · #17 chặn nội dung quá dài trước khi gửi
    v2.1.0: KHỚP LẠI TÊN CỘT với Code.gs — trước đây các bảng Thành viên,
@@ -123,8 +133,8 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 </head>
 <body>
 <header>
-<h1>🤖 TEIN AI BOT</h1>
-<div class="sub">Bảng điều khiển — <b>Mini App v2.1.2</b> <span id="verBox" class="muted"></span></div>
+<h1 id="botTitle">🤖 Bảng điều khiển bot <span id="envBadge" class="pill" style="display:none;vertical-align:middle;font-size:13px"></span></h1>
+<div class="sub">Bảng điều khiển — <b>Mini App v2.1.4</b> <span id="verBox" class="muted"></span></div>
 <div class="status" id="statusLine"><span class="dot" id="statusDot"></span> <span id="statusText">Đang kết nối...</span></div>
 </header>
 
@@ -366,8 +376,24 @@ var API_URL=getExec();
 var STATE={ groups:[], config:{} };
 
 function cleanKey(k){ return String(k||'').replace(/^#/,'').split('?')[0].split('&')[0].replace(/tgWebApp[\s\S]*$/i,'').trim(); }
-function getKey(){ var h=cleanKey(location.hash||''); return h || localStorage.getItem('tein_key') || ''; }
-function setKey(k){ try{ localStorage.setItem('tein_key',k); }catch(e){} }
+/* ===== v2.1.4 — MÃ QUẢN TRỊ LƯU RIÊNG CHO TẮNG BOT =====
+ * Trước đây mã lưu vào MỘT ô chung tên 'tein_key'. Hai dự án Apps Script của anh
+ * vẫn riêng biệt hoàn toàn — vấn đề chỉ nảy ra trong TRÌNH DUYỆT: mở Mini App
+ * của bot beta rồi mở tiếp bot chính thì mã sau đè mất mã trước, quay lại bị
+ * đòi dán mã lại. Giờ mỗi link /exec có ô nhớ riêng, mở qua lại bao nhiêu
+ * lần cũng không phải nhập lại. */
+function keySlot_(){ return 'tein_key::' + (API_URL || 'default'); }
+function getKey(){
+  var h=cleanKey(location.hash||''); if(h) return h;
+  try{
+    var k=localStorage.getItem(keySlot_());
+    if(k) return k;
+    return localStorage.getItem('tein_key')||'';   // tương thích bản cũ (ô nhớ chung)
+  }catch(e){ return ''; }
+}
+function setKey(k){
+  try{ localStorage.setItem(keySlot_(),k); localStorage.removeItem('tein_key'); }catch(e){}
+}
 var ADMIN_KEY=getKey();
 
 function api(action, params, ms){
@@ -865,6 +891,21 @@ function refresh(fromGate){
     showApp();
     var ver=STATE.version||((STATE.config.CODE_VERSION||'')+(STATE.config.BOT_ENV?(' · '+STATE.config.BOT_ENV):''));
     $('verBox').textContent=ver?('— bot: '+ver):'';
+
+    /* v2.1.4 — hiện TÊN BOT thật + huy hiệu BETA/CHÍNH lấy từ chính con bot
+     * đang được điều khiển (ô BOT_NAME và BOT_ENV trong sheet Config của bot đó),
+     * để không bao giờ nhầm bảng điều khiển của bot này với bot kia. */
+    try{
+      var bn=STATE.botName||STATE.config.BOT_NAME||'';
+      $('botTitle').innerHTML='🤖 '+esc(bn||'Bảng điều khiển bot')+
+        ' <span id="envBadge" class="pill" style="vertical-align:middle;font-size:13px"></span>';
+      var env=String(STATE.env||STATE.config.BOT_ENV||'').toLowerCase();
+      var eb=$('envBadge');
+      if(env==='main'){ eb.textContent='BOT CHÍNH — đang phục vụ người thật'; eb.className='pill err'; }
+      else { eb.textContent='BOT BETA — bản thử nghiệm'; eb.className='pill'; }
+      eb.style.display='inline-block';
+      document.title=(bn||'Bảng điều khiển bot')+(env==='main'?'':' (beta)');
+    }catch(e){}
     setStatus('live','Đang hoạt động • '+STATE.groups.length+' nhóm • '+(STATE.config.TEXT_LADDER||'thang mặc định'));
     renderGroups(); buildConfig(); loadMembers(); loadErrors(); loadActivity(); loadPrivateUsers();
   }).catch(function(e){
