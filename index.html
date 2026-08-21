@@ -7,9 +7,9 @@
 <title>Bảng điều khiển bot</title>
 <!--
   ============================================================
-   MINI APP QUẢN TRỊ BOT — v2.1.6  (20/08/2026)
+   MINI APP QUẢN TRỊ BOT — v2.1.7  (20/08/2026)
    Dán thay TOÀN BỘ file index.html cũ trên GitHub.
-   v2.1.6: 1) TÊN BOT không còn viết cứng trong file. Tiêu đề lấy từ ô BOT_NAME
+   v2.1.7: 1) TÊN BOT không còn viết cứng trong file. Tiêu đề lấy từ ô BOT_NAME
               của sheet Config (bot trả về qua api=init) -> cùng 1 file dùng cho
               bot beta và bot chính, mỗi bên tự hiện tên của nó.
            2) HUY HIỆU BETA / CHÍNH to ở đầu trang để không bao giờ bấm nhầm
@@ -134,7 +134,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <body>
 <header>
 <h1 id="botTitle">🤖 Bảng điều khiển bot <span id="envBadge" class="pill" style="display:none;vertical-align:middle;font-size:13px"></span></h1>
-<div class="sub">Bảng điều khiển — <b>Mini App v2.1.6</b> <span id="verBox" class="muted"></span></div>
+<div class="sub">Bảng điều khiển — <b>Mini App v2.1.7</b> <span id="verBox" class="muted"></span></div>
 <div class="status" id="statusLine"><span class="dot" id="statusDot"></span> <span id="statusText">Đang kết nối...</span></div>
 </header>
 
@@ -265,7 +265,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <p class="muted">Bảng này <b>chỉ đọc</b> — không ghi đè gì vào Sheet. Gọi thật từng nhà cung cấp để biết key còn sống và tên model còn tồn tại hay không. Mất khoảng 10-20 giây.</p>
 <button id="apiRun">▶️ Kiểm tra ngay</button>
 <div id="apiWrap" style="margin-top:10px"><p class="muted">Chưa chạy lần nào.</p></div>
-<!-- v2.1.6: nút Groq — không cần gõ lệnh trong chat nữa -->
+<!-- v2.1.7: nút Groq — không cần gõ lệnh trong chat nữa -->
 <hr style="border:none;border-top:1px solid #2a3550;margin:14px 0">
 <h3 style="margin:0 0 4px">⚡ Groq — model dự phòng</h3>
 <p class="muted">Groq hay "khai tử" model cũ mà không báo trước. Bấm nút này để xem model đang sống và cho bot tự chọn lại model mới.</p>
@@ -382,7 +382,7 @@ var API_URL=getExec();
 var STATE={ groups:[], config:{} };
 
 function cleanKey(k){ return String(k||'').replace(/^#/,'').split('?')[0].split('&')[0].replace(/tgWebApp[\s\S]*$/i,'').trim(); }
-/* ===== v2.1.6 — MÃ QUẢN TRỊ LƯU RIÊNG CHO TẮNG BOT =====
+/* ===== v2.1.7 — MÃ QUẢN TRỊ LƯU RIÊNG CHO TẮNG BOT =====
  * Trước đây mã lưu vào MỘT ô chung tên 'tein_key'. Hai dự án Apps Script của anh
  * vẫn riêng biệt hoàn toàn — vấn đề chỉ nảy ra trong TRÌNH DUYỆT: mở Mini App
  * của bot beta rồi mở tiếp bot chính thì mã sau đè mất mã trước, quay lại bị
@@ -808,7 +808,7 @@ $('apiRun').addEventListener('click',function(){
   }).then(function(){ btn.disabled=false; });
 });
 
-/* ===== v2.1.6 — NÚT GROQ (thay cho việc gõ lệnh /groq trong chat) ===== */
+/* ===== v2.1.7 — NÚT GROQ (thay cho việc gõ lệnh /groq trong chat) ===== */
 $('groqRun').addEventListener('click',function(){
   var w=$('groqWrap'); var btn=this;
   btn.disabled=true; w.innerHTML='<p class="muted">Đang hỏi Groq danh sách model đang sống...</p>';
@@ -817,10 +817,20 @@ $('groqRun').addEventListener('click',function(){
     if(!d.hasKey){ w.innerHTML='<span class="pill warn">Chưa có GROQ_API_KEY</span><p class="muted">Điền key ở tab 🔐 Cấu hình trước đã nhé.</p>'; return; }
     var live=d.live||[];
     var h='';
-    h+=d.changed
-      ? '<span class="pill ok">Đã tự đổi model</span><p class="muted">Cũ: <code>'+esc(d.before||'(trống)')+'</code><br>Mới: <code>'+esc(d.current||'')+'</code><br>Bot đã ghi vào Config và nhắn cho admin.</p>'
-      : '<span class="pill ok">Model đang dùng vẫn sống</span><p class="muted">Đang dùng: <code>'+esc(d.current||'(trống)')+'</code></p>';
-    h+='<p class="muted">Dịch chữ: <code>'+esc((d.text||[]).join(', '))+'</code><br>Xem ảnh: <code>'+esc((d.vision||[]).join(', '))+'</code><br>Tự đổi model (GROQ_AUTO_MODEL): <b>'+esc(d.auto||'')+'</b></p>';
+    /* v2.1.7 lỗi #41: nhãn phải nói đúng sự thật — bản cũ luôn xanh "vẫn sống"
+       dù model trong Config đã bị Groq khai tử. */
+    if(d.changed){
+      h+='<span class="pill ok">Đã tự đổi model</span><p class="muted">Cũ: <code>'+esc(d.before||'(trống)')+'</code><br>Mới: <code>'+esc(d.current||'')+'</code><br>Bot đã ghi vào Config và nhắn cho admin.</p>';
+    }else if((d.dead||[]).length){
+      h+='<span class="pill err">Model đang dùng ĐÃ CHẾT</span><p class="muted">Đã chết: <code>'+esc((d.dead||[]).join(', '))+'</code><br>Bật <code>GROQ_AUTO_MODEL = on</code> rồi bấm lại nút này, hoặc copy 1 tên model bên dưới dán vào ô <code>GROQ_MODEL</code>.</p>';
+    }else if(d.ok){
+      h+='<span class="pill ok">Model đang dùng vẫn sống</span><p class="muted">Đang dùng: <code>'+esc(d.current||'(trống)')+'</code></p>';
+    }else{
+      h+='<span class="pill warn">Chưa xác định được</span><p class="muted">Đang dùng: <code>'+esc(d.current||'(trống)')+'</code></p>';
+    }
+    h+='<p class="muted">Dịch chữ: <code>'+esc((d.text||[]).join(', ')||'(không có)')+'</code><br>Xem ảnh: <code>'+esc((d.vision||[]).join(', ')||'(không có)')+'</code><br>Tự đổi model (GROQ_AUTO_MODEL): <b>'+esc(d.auto||'')+'</b></p>';
+    /* v2.1.7 lỗi #41: Groq có lúc không còn model xem ảnh nào — nói rõ đây không phải lỗi. */
+    if(!d.hasVision){ h+='<p class="muted">⚠️ Groq hiện KHÔNG có model xem ảnh (dòng llama-4) nào đang sống → dịch ảnh sẽ tự nhảy sang nguồn sau trong IMAGE_LADDER (Gemini / OpenRouter / OCR.space). Đây không phải lỗi.</p>'; }
     if(live.length){
       h+='<p class="muted">'+live.length+' model đang sống — bấm 📋 để copy tên nếu muốn điền tay:</p><div class="tblWrap"><table><tr><th>Model đang sống</th><th></th></tr>';
       live.forEach(function(m){ h+='<tr><td><code>'+esc(m)+'</code></td><td><button class="sec btnCopyErr" data-copy="'+esc(m)+'" style="margin-top:0;padding:6px 8px;white-space:nowrap">📋 Copy</button></td></tr>'; });
@@ -831,7 +841,7 @@ $('groqRun').addEventListener('click',function(){
     w.innerHTML=h;
     Array.prototype.forEach.call(w.querySelectorAll('.btnCopyErr'),function(b){ b.addEventListener('click',function(){ copyText(b.getAttribute('data-copy')); }); });
   }).catch(function(e){
-    if(apiMissing_(e)) w.innerHTML='<span class="pill warn">Bản Mã.gs đang chạy chưa có nút này</span><p class="muted">Anh dán Mã.gs v2.1.6 rồi Triển khai lại là nút chạy được.</p>';
+    if(apiMissing_(e)) w.innerHTML='<span class="pill warn">Bản Mã.gs đang chạy chưa có nút này</span><p class="muted">Anh dán Mã.gs v2.1.7 rồi Triển khai lại là nút chạy được.</p>';
     else w.innerHTML='<span class="pill err">Lỗi: '+esc(e.message)+'</span>';
   }).then(function(){ btn.disabled=false; });
 });
@@ -847,11 +857,12 @@ var CFG=[
   {k:'GEMINI_API_KEY',t:'text', label:'Key Gemini (AI Studio)', hint:'Nhiều key cách nhau dấu phẩy. Để trống = giữ nguyên', secret:true},
   {k:'OPENROUTER_MODELS', t:'text', label:'Model OpenRouter (thử từ trên xuống)'},
   {k:'OPENROUTER_API_KEY',t:'text', label:'Key OpenRouter', hint:'Để trống = giữ nguyên', secret:true},
-  {k:'GROQ_MODEL',    t:'text', label:'Model Groq', hint:'Model dịch ảnh phải thuộc dòng llama-4. Không biết điền gì thì sang tab Kiểm tra API bấm nút Groq'},
+  {k:'GROQ_MODEL',    t:'text', label:'Model Groq', hint:'v2.1.7: ĐỂ TRỐNG là tốt nhất — bot tự chọn model đang sống và tự ghi vào ô này. Muốn điền tay thì sang tab Kiểm tra API bấm nút Groq để copy tên model'},
+  {k:'BUSY_FAST',     t:'text', label:'Đông người dùng thì tự chạy gọn hơn (v2.1.7)', hint:'on = nhiều tin cùng lúc thì bot tự hạ giờ chờ mỗi nguồn AI (60→30→20 giây) cho đỡ tắc | off = luôn chờ đủ'},
   {k:'GROQ_AUTO_MODEL', t:'text', label:'Groq tự đổi model khi model chết (v2.1.5)', hint:'on = tự tìm model còn sống và nhắn cho admin (khuyên dùng) | off = tự điền tay'},
-  {k:'AI_PROVIDER_SEC', t:'number', label:'Chờ MỖI nguồn AI bao nhiêu giây (v2.1.6)', hint:'Mặc định 60. Để cao thì Gemini được suy nghĩ lâu hơn mới tụt xuống nguồn dưới'},
+  {k:'AI_PROVIDER_SEC', t:'number', label:'Chờ MỖI nguồn AI bao nhiêu giây (v2.1.7)', hint:'Mặc định 60. Để cao thì Gemini được suy nghĩ lâu hơn mới tụt xuống nguồn dưới'},
   {k:'AI_DEADLINE_SEC', t:'number', label:'Tổng thời gian tối đa cho 1 câu /ai (v2.1.5)', hint:'Mặc định 150 giây. Hết giờ là bot báo lại ngay, không để người dùng đợi mãi'},
-  {k:'API_ALERT',     t:'text', label:'Báo cho admin khi API lỗi (v2.1.6)', hint:'on = nhắn Telegram + ghi Nhật ký lỗi | off = chỉ ghi Nhật ký lỗi'},
+  {k:'API_ALERT',     t:'text', label:'Báo cho admin khi API lỗi (v2.1.7)', hint:'on = nhắn Telegram + ghi Nhật ký lỗi | off = chỉ ghi Nhật ký lỗi'},
   {k:'ADMIN_QUOTA_NOTICE', t:'text', label:'Hiện dòng "đã trừ 1 lượt" cho admin (v2.1.5)', hint:'off = không hiện (khuyên dùng), xem lượt bằng lệnh /user'},
   {k:'GROQ_API_KEY',  t:'text', label:'Key Groq', hint:'Để trống = giữ nguyên', secret:true},
   {k:'TRANSLATE_API_KEY', t:'text', label:'Key Google Cloud Translation (không bắt buộc)', secret:true},
@@ -931,7 +942,7 @@ function refresh(fromGate){
     var ver=STATE.version||((STATE.config.CODE_VERSION||'')+(STATE.config.BOT_ENV?(' · '+STATE.config.BOT_ENV):''));
     $('verBox').textContent=ver?('— bot: '+ver):'';
 
-    /* v2.1.6 — hiện TÊN BOT thật + huy hiệu BETA/CHÍNH lấy từ chính con bot
+    /* v2.1.7 — hiện TÊN BOT thật + huy hiệu BETA/CHÍNH lấy từ chính con bot
      * đang được điều khiển (ô BOT_NAME và BOT_ENV trong sheet Config của bot đó),
      * để không bao giờ nhầm bảng điều khiển của bot này với bot kia. */
     try{
