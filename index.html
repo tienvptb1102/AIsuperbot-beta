@@ -7,8 +7,14 @@
 <title>Bảng điều khiển bot</title>
 <!--
   ============================================================
-   MINI APP QUẢN TRỊ BOT — v2.1.7  (20/08/2026)
+   MINI APP QUẢN TRỊ BOT — v3.0.0-cf  (22/08/2026) — BẢN CLOUDFLARE
    Dán thay TOÀN BỘ file index.html cũ trên GitHub.
+   v3.0.0-cf: bot chuyển sang Cloudflare Workers thay Apps Script. Mini App TỰ NHẬN
+              BIẾT máy chủ qua link: link workers.dev -> gọi POST JSON (KHÔNG giới
+              hạn độ dài — hết hẳn lỗi #17, gửi thông báo dài thoải mái); link
+              script.google.com (bot cũ) -> vẫn dùng JSONP y như cũ.
+              => 1 file này dùng được cho CẢ bot Cloudflare lẫn bot Apps Script.
+   (lịch sử các bản cũ giữ nguyên bên dưới)
    v2.1.7: 1) TÊN BOT không còn viết cứng trong file. Tiêu đề lấy từ ô BOT_NAME
               của sheet Config (bot trả về qua api=init) -> cùng 1 file dùng cho
               bot beta và bot chính, mỗi bên tự hiện tên của nó.
@@ -134,7 +140,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <body>
 <header>
 <h1 id="botTitle">🤖 Bảng điều khiển bot <span id="envBadge" class="pill" style="display:none;vertical-align:middle;font-size:13px"></span></h1>
-<div class="sub">Bảng điều khiển — <b>Mini App v2.1.7</b> <span id="verBox" class="muted"></span></div>
+<div class="sub">Bảng điều khiển — <b>Mini App v3.0.0-cf</b> <span id="verBox" class="muted"></span></div>
 <div class="status" id="statusLine"><span class="dot" id="statusDot"></span> <span id="statusText">Đang kết nối...</span></div>
 </header>
 
@@ -144,8 +150,8 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <h2>🔑 Nhập mã quản trị</h2>
 <p class="muted">Dán ADMIN_KEY (lấy trong sheet Config, hoặc gõ /web trong bot). Máy sẽ nhớ, lần sau không cần nhập lại.</p>
 <input id="gateKey" placeholder="Dán ADMIN_KEY tại đây" autocomplete="off">
-<p class="muted" style="margin-top:10px">Link <b>/exec</b> của bot — tự điền khi mở từ lệnh /web. Chỉ nhập tay nếu mở trực tiếp bằng trình duyệt. Đổi link này là chuyển sang bot khác — 1 file dùng cho cả bot beta và bot chính.</p>
-<input id="gateExec" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+<p class="muted" style="margin-top:10px">Link <b>Worker</b> của bot (dạng <code>https://....workers.dev</code>) — tự điền khi mở từ lệnh /web. Chỉ nhập tay nếu mở trực tiếp bằng trình duyệt. Đổi link này là chuyển sang bot khác. Link cũ script.google.com của bản Apps Script vẫn dùng được như trước.</p>
+<input id="gateExec" placeholder="https://tein-ai-bot-beta.xxxx.workers.dev" autocomplete="off">
 <button id="gateBtn">✅ Lưu &amp; kết nối</button>
 <div id="gateMsg" class="muted" style="margin-top:8px"></div>
 </div>
@@ -352,10 +358,17 @@ function normExec_(u){
   u=String(u||"").trim().replace(/[#?].*$/,"").replace(/\/+$/,"");
   if(!u) return "";
   if(!/^https?:\/\//i.test(u)) return "";
-  u=u.replace(/\/dev$/i,"/exec");
-  if(!/\/exec$/i.test(u)){ if(/script\.google\.com\/macros\/s\//i.test(u)) u+="/exec"; else return ""; }
-  return u;
+  if(/script\.google\.com\/macros\/s\//i.test(u)){
+    /* Bot cũ Apps Script: bắt buộc kết thúc bằng /exec */
+    u=u.replace(/\/dev$/i,"/exec");
+    if(!/\/exec$/i.test(u)) u+="/exec";
+    return u;
+  }
+  /* Bot Cloudflare: chỉ giữ origin (https://ten.workers.dev) */
+  var m=u.match(/^(https?:\/\/[^\/]+)/i);
+  return m?m[1]:"";
 }
+function isLegacy_(){ return /script\.google\.com/i.test(API_URL||""); }
 function getExec(){
   var e=normExec_(param_("exec"));
   if(e){ try{ localStorage.setItem("tein_exec",e); }catch(_){} return e; }
@@ -404,16 +417,32 @@ var ADMIN_KEY=getKey();
 
 function api(action, params, ms){
   params=params||{};
-  var qs='?api='+encodeURIComponent(action)+'&key='+encodeURIComponent(ADMIN_KEY);
-  var keys=Object.keys(params);
-  for(var i=0;i<keys.length;i++){
-    var v=params[keys[i]];
-    if(v!==null && typeof v==='object') v=JSON.stringify(v);
-    qs+='&'+keys[i]+'='+encodeURIComponent(v==null?'':v);
+  if(!API_URL) return Promise.reject(new Error("Chưa có link máy chủ của bot. Gõ /web trong bot rồi bấm nút Bảng điều khiển, hoặc dán link Worker ở ô bên dưới."));
+  /* Chế độ bot cũ Apps Script: JSONP qua URL (giữ nguyên như v2.1.7) */
+  if(isLegacy_()){
+    var qs='?api='+encodeURIComponent(action)+'&key='+encodeURIComponent(ADMIN_KEY);
+    var keys=Object.keys(params);
+    for(var i=0;i<keys.length;i++){
+      var v=params[keys[i]];
+      if(v!==null && typeof v==='object') v=JSON.stringify(v);
+      qs+='&'+keys[i]+'='+encodeURIComponent(v==null?'':v);
+    }
+    if(qs.length>JSONP_MAX) return Promise.reject(new Error("Nội dung quá dài để gửi qua Mini App ("+qs.length+" ký tự). Hãy rút ngắn, hoặc dùng lệnh trong Telegram."));
+    return jsonp_(API_URL+qs, ms);
   }
-  if(!API_URL) return Promise.reject(new Error("Chưa có link /exec của bot. Gõ /web trong bot rồi bấm nút Bảng điều khiển, hoặc dán link /exec ở ô bên dưới."));
-  if(qs.length>JSONP_MAX) return Promise.reject(new Error("Nội dung quá dài để gửi qua Mini App ("+qs.length+" ký tự). Hãy rút ngắn, hoặc dùng lệnh trong Telegram."));
-  return jsonp_(API_URL+qs, ms);
+  /* Chế độ Cloudflare: POST JSON — KHÔNG giới hạn độ dài, hết lỗi #17 */
+  return new Promise(function(resolve,reject){
+    var ctrl=new AbortController();
+    var timer=setTimeout(function(){ ctrl.abort(); }, ms||30000);
+    fetch(API_URL+'/api',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify(Object.assign({api:action,key:ADMIN_KEY},params)),signal:ctrl.signal})
+      .then(function(r){ return r.json(); })
+      .then(function(j){ clearTimeout(timer); if(j&&j.ok) resolve(j.data); else reject(new Error((j&&j.error)||'Lỗi không rõ')); })
+      .catch(function(e){ clearTimeout(timer);
+        reject(new Error(e&&e.name==='AbortError'
+          ? ('Máy chủ không trả lời (quá '+Math.round((ms||30000)/1000)+' giây). Kiểm tra Worker còn bật không.')
+          : ('Không gọi được máy chủ: '+((e&&e.message)||e)+'. Link đang dùng: '+API_URL))); });
+  });
 }
 function apiMissing_(e){ return /không biết|unknown|không hợp lệ|invalid api|no api/i.test(String(e&&e.message)); }
 
@@ -584,12 +613,12 @@ $('memExport').addEventListener('click',function(){
 });
 
 /* ===== Thông báo (FIX #17) ===== */
-function bcLen(){ var n=encodeURIComponent($('bcContent').value||'').length; $('bcCount').textContent=$('bcContent').value.length+' ký tự'+(n>1200?' — ⚠️ quá dài, hãy dùng /thongbao trong Telegram':''); }
+function bcLen(){ var n=encodeURIComponent($('bcContent').value||'').length; $('bcCount').textContent=$('bcContent').value.length+' ký tự'+((n>1200&&isLegacy_())?' — ⚠️ quá dài, hãy dùng /thongbao trong Telegram':''); }
 $('bcContent').addEventListener('input',bcLen);
 $('bcSend').addEventListener('click',function(){
   var content=$('bcContent').value.trim();
   if(!content){ toast('Chưa nhập nội dung'); return; }
-  if(encodeURIComponent(content).length>1200){ toast('Nội dung dài quá giới hạn gửi qua Mini App. Hãy gửi bằng lệnh /thongbao trong Telegram.'); return; }
+  if(isLegacy_()&&encodeURIComponent(content).length>1200){ toast('Nội dung dài quá giới hạn gửi qua Mini App. Hãy gửi bằng lệnh /thongbao trong Telegram.'); return; }
   var targets=[];
   if($('bcAll').checked) targets=STATE.groups.map(function(g){ return g.id; });
   else document.querySelectorAll('.bcg:checked').forEach(function(c){ targets.push(c.value); });
@@ -647,13 +676,13 @@ if($('ubAll')) $('ubAll').addEventListener('change',function(){
 function ubLen(){
   var v=$('ubContent').value||'';
   var n=encodeURIComponent(v).length;
-  $('ubCount').textContent=v.length+' ký tự'+(n>1200?' — ⚠️ quá dài, hãy dùng lệnh /tbuser trong Telegram':'');
+  $('ubCount').textContent=v.length+' ký tự'+((n>1200&&isLegacy_())?' — ⚠️ quá dài, hãy dùng lệnh /tbuser trong Telegram':'');
 }
 if($('ubContent')) $('ubContent').addEventListener('input',ubLen);
 if($('ubSend')) $('ubSend').addEventListener('click',function(){
   var content=$('ubContent').value.trim();
   if(!content){ toast('Chưa nhập nội dung'); return; }
-  if(encodeURIComponent(content).length>1200){ toast('Nội dung dài quá giới hạn gửi qua Mini App. Hãy dùng lệnh /tbuser trong Telegram.'); return; }
+  if(isLegacy_()&&encodeURIComponent(content).length>1200){ toast('Nội dung dài quá giới hạn gửi qua Mini App. Hãy dùng lệnh /tbuser trong Telegram.'); return; }
   var uids=[];
   Array.prototype.forEach.call(document.querySelectorAll('.ubu'),function(c){ if(c.checked) uids.push(c.value); });
   if(!uids.length){ toast('Chưa chọn user nào'); return; }
@@ -830,7 +859,7 @@ $('groqRun').addEventListener('click',function(){
     }
     h+='<p class="muted">Dịch chữ: <code>'+esc((d.text||[]).join(', ')||'(không có)')+'</code><br>Xem ảnh: <code>'+esc((d.vision||[]).join(', ')||'(không có)')+'</code><br>Tự đổi model (GROQ_AUTO_MODEL): <b>'+esc(d.auto||'')+'</b></p>';
     /* v2.1.7 lỗi #41: Groq có lúc không còn model xem ảnh nào — nói rõ đây không phải lỗi. */
-    if(!d.hasVision){ h+='<p class="muted">⚠️ Groq hiện KHÔNG có model xem ảnh (dòng llama-4) nào đang sống → dịch ảnh sẽ tự nhảy sang nguồn sau trong IMAGE_LADDER (Gemini / OpenRouter / OCR.space). Đây không phải lỗi.</p>'; }
+    if(!d.hasVision){ h+='<p class="muted">⚠️ Groq hiện KHÔNG có model xem ��nh (dòng llama-4) nào đang sống → dịch ảnh sẽ tự nhảy sang nguồn sau trong IMAGE_LADDER (Gemini / OpenRouter / OCR.space). Đây không phải lỗi.</p>'; }
     if(live.length){
       h+='<p class="muted">'+live.length+' model đang sống — bấm 📋 để copy tên nếu muốn điền tay:</p><div class="tblWrap"><table><tr><th>Model đang sống</th><th></th></tr>';
       live.forEach(function(m){ h+='<tr><td><code>'+esc(m)+'</code></td><td><button class="sec btnCopyErr" data-copy="'+esc(m)+'" style="margin-top:0;padding:6px 8px;white-space:nowrap">📋 Copy</button></td></tr>'; });
@@ -877,12 +906,11 @@ var CFG=[
   {k:'AI_DAILY_LIMIT',t:'number', label:'Giới hạn /ai mỗi ngày cho 1 nhóm'},
   {k:'AI_MAX_TURNS',  t:'number', label:'Số lượt hỏi-đáp AI ghi nhớ'},
   {k:'AI_SEARCH',     t:'select', label:'Cho /ai tự tìm web', opts:[['on','Bật'],['off','Tắt']]},
-  {k:'AWAKE_MINUTES', t:'number', label:'Số phút bot giữ thức sau tin cuối (chế độ Polling)'},
   {k:'SECRET_CMD',    t:'text', label:'Lệnh bí mật gửi thông báo'},
   {k:'BOT_ENV',       t:'select', label:'Bot này là bản nào', opts:[['beta','beta (thử nghiệm)'],['main','main (bản chính)']]},
-  {k:'ADMIN_ID',      t:'text', label:'Admin ID'},
-  {k:'DASHBOARD_URL', t:'text', label:'Link Mini App (GitHub Pages)'},
-  {k:'BOT_TOKEN',     t:'text', label:'Bot Token', hint:'Để trống = không đổi. Chỉ điền khi muốn chuyển token', secret:true}
+  {k:'ADMIN_ID',      t:'text', label:'Admin ID', hint:'Bản Cloudflare đặt ở biến môi trường của Worker — không sửa được từ đây'},
+  {k:'DASHBOARD_URL', t:'text', label:'Link Mini App (GitHub Pages / Cloudflare Pages)'},
+  {k:'BOT_TOKEN',     t:'text', label:'Bot Token', hint:'Bản Cloudflare giữ token ở biến môi trường của Worker — không sửa được từ đây', secret:true}
 ];
 var ORIG={};
 function buildConfig(){
