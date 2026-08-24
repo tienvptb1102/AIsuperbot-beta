@@ -7,7 +7,7 @@
 <title>Bảng điều khiển bot</title>
 <!--
   ============================================================
-   MINI APP QUẢN TRỊ BOT — v3.0.0-cf  (22/08/2026) — BẢN CLOUDFLARE
+   MINI APP QUẢN TRỊ BOT — v3.0.1-cf  (22/08/2026) — BẢN CLOUDFLARE
    Dán thay TOÀN BỘ file index.html cũ trên GitHub.
    v3.0.0-cf: bot chuyển sang Cloudflare Workers thay Apps Script. Mini App TỰ NHẬN
               BIẾT máy chủ qua link: link workers.dev -> gọi POST JSON (KHÔNG giới
@@ -140,7 +140,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <body>
 <header>
 <h1 id="botTitle">🤖 Bảng điều khiển bot <span id="envBadge" class="pill" style="display:none;vertical-align:middle;font-size:13px"></span></h1>
-<div class="sub">Bảng điều khiển — <b>Mini App v3.0.0-cf</b> <span id="verBox" class="muted"></span></div>
+<div class="sub">Bảng điều khiển — <b>Mini App v3.0.1-cf</b> <span id="verBox" class="muted"></span></div>
 <div class="status" id="statusLine"><span class="dot" id="statusDot"></span> <span id="statusText">Đang kết nối...</span></div>
 </header>
 
@@ -980,7 +980,7 @@ function refresh(fromGate){
       var env=String(STATE.env||STATE.config.BOT_ENV||'').toLowerCase();
       var eb=$('envBadge');
       if(env==='main'){ eb.textContent='BOT CHÍNH — đang phục vụ người thật'; eb.className='pill err'; }
-      else { eb.textContent='BOT BETA — bản thự nghiệm'; eb.className='pill'; }
+      else { eb.textContent='BOT BETA — bản thử nghiệm'; eb.className='pill'; }
       eb.style.display='inline-block';
       document.title=(bn||'Bảng điều khiển bot')+(env==='main'?'':' (beta)');
     }catch(e){}
