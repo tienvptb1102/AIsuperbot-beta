@@ -7,7 +7,7 @@
 <title>Bảng điều khiển bot</title>
 <!--
   ============================================================
-   MINI APP QUẢN TRỊ BOT — v3.0.1-cf  (22/08/2026) — BẢN CLOUDFLARE
+   MINI APP QUẢN TRỊ BOT — v3.0.2-cf  (22/08/2026) — BẢN CLOUDFLARE
    Dán thay TOÀN BỘ file index.html cũ trên GitHub.
    v3.0.0-cf: bot chuyển sang Cloudflare Workers thay Apps Script. Mini App TỰ NHẬN
               BIẾT máy chủ qua link: link workers.dev -> gọi POST JSON (KHÔNG giới
@@ -140,7 +140,7 @@ code{background:#0b1220;padding:2px 6px;border-radius:6px;}
 <body>
 <header>
 <h1 id="botTitle">🤖 Bảng điều khiển bot <span id="envBadge" class="pill" style="display:none;vertical-align:middle;font-size:13px"></span></h1>
-<div class="sub">Bảng điều khiển — <b>Mini App v3.0.1-cf</b> <span id="verBox" class="muted"></span></div>
+<div class="sub">Bảng điều khiển — <b>Mini App v3.0.2-cf</b> <span id="verBox" class="muted"></span></div>
 <div class="status" id="statusLine"><span class="dot" id="statusDot"></span> <span id="statusText">Đang kết nối...</span></div>
 </header>
 
@@ -889,7 +889,8 @@ var CFG=[
   {k:'GROQ_MODEL',    t:'text', label:'Model Groq', hint:'v2.1.7: ĐỂ TRỐNG là tốt nhất — bot tự chọn model đang sống và tự ghi vào ô này. Muốn điền tay thì sang tab Kiểm tra API bấm nút Groq để copy tên model'},
   {k:'BUSY_FAST',     t:'text', label:'Đông người dùng thì tự chạy gọn hơn (v2.1.7)', hint:'on = nhiều tin cùng lúc thì bot tự hạ giờ chờ mỗi nguồn AI (60→30→20 giây) cho đỡ tắc | off = luôn chờ đủ'},
   {k:'GROQ_AUTO_MODEL', t:'text', label:'Groq tự đổi model khi model chết (v2.1.5)', hint:'on = tự tìm model còn sống và nhắn cho admin (khuyên dùng) | off = tự điền tay'},
-  {k:'AI_PROVIDER_SEC', t:'number', label:'Chờ MỖI nguồn AI bao nhiêu giây (v2.1.7)', hint:'Mặc định 60. Để cao thì Gemini được suy nghĩ lâu hơn mới tụt xuống nguồn dưới'},
+  {k:'AI_THINKING', t:'select', label:'Cho /ai suy nghĩ sâu (thinking)', opts:[['on','Bật — /ai thông minh hơn, chậm hơn 5-15 giây'],['off','Tắt — trả lời nhanh (mặc định)']]},
+  {k:'AI_PROVIDER_SEC', t:'number', label:'Chờ MỖI nguồn AI bao nhiêu giây (v2.1.7)', hint:'Mặc định 60. Anh muốn /ai chờ Gemini 100 giây thì điền 100. Để cao thì Gemini được suy nghĩ lâu hơn mới tụt xuống nguồn dưới'},
   {k:'AI_DEADLINE_SEC', t:'number', label:'Tổng thời gian tối đa cho 1 câu /ai (v2.1.5)', hint:'Mặc định 150 giây. Hết giờ là bot báo lại ngay, không để người dùng đợi mãi'},
   {k:'API_ALERT',     t:'text', label:'Báo cho admin khi API lỗi (v2.1.7)', hint:'on = nhắn Telegram + ghi Nhật ký lỗi | off = chỉ ghi Nhật ký lỗi'},
   {k:'ADMIN_QUOTA_NOTICE', t:'text', label:'Hiện dòng "đã trừ 1 lượt" cho admin (v2.1.5)', hint:'off = không hiện (khuyên dùng), xem lượt bằng lệnh /user'},
